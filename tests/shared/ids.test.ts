@@ -36,7 +36,7 @@ describe('allocateId', () => {
 
   it('does not mutate the input profile', () => {
     const p = emptyProfile()
-    allocateId(p, 'projects')
-    expect(p.nextIds.projects).toBe(1)
+    allocateId(p, 'skills')
+    expect(p.nextIds.skills).toBe(1)
   })
 })

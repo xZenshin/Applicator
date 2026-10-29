@@ -2,7 +2,7 @@ import { mkdtemp, readdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { exportApplicationPdfs } from '../../src/main/pdf/export'
+import { exportApplicationPdfs, saveCvPdf } from '../../src/main/pdf/export'
 import { applicationDir, createApplication, loadApplication } from '../../src/main/storage/applications'
 import { sampleDraft, sampleProfile } from '../fixtures/sample-data'
 
@@ -54,5 +54,51 @@ describe('export write failures', () => {
     expect(e.kind).toBe('export_failed')
     expect(e.message).toMatch(/close it/i)
     expect(e.message).toContain('CV - Jane Doe - Acme.pdf')
+  })
+})
+
+describe('saveCvPdf', () => {
+  it('suggests the default path and writes the PDF where the user chose', async () => {
+    const chosen = join(dataDir, 'My CV.pdf')
+    const defaultPath = join(dataDir, 'CV - Jane Doe.pdf')
+    let suggested = ''
+    const saved = await saveCvPdf({
+      html: '<cv/>',
+      defaultPath,
+      choosePath: async (path) => {
+        suggested = path
+        return chosen
+      },
+      toPdf
+    })
+    expect(suggested).toBe(defaultPath)
+    expect(saved).toBe(chosen)
+    expect(await readFile(chosen, 'utf8')).toBe('<cv/>')
+  })
+
+  it('writes nothing and returns null when the user cancels', async () => {
+    let printed = false
+    const saved = await saveCvPdf({
+      html: '<cv/>',
+      defaultPath: join(dataDir, 'CV.pdf'),
+      choosePath: async () => null,
+      toPdf: async (html) => {
+        printed = true
+        return toPdf(html)
+      }
+    })
+    expect(saved).toBeNull()
+    expect(printed).toBe(false)
+    expect(await readdir(dataDir)).not.toContain('CV.pdf')
+  })
+
+  it('reports a file that cannot be written as export_failed with advice', async () => {
+    const { mkdir } = await import('node:fs/promises')
+    const chosen = join(dataDir, 'Open elsewhere.pdf')
+    await mkdir(chosen)
+    const e = await saveCvPdf({ html: 'x', defaultPath: chosen, choosePath: async () => chosen, toPdf }).catch((x) => x)
+    expect(e.kind).toBe('export_failed')
+    expect(e.message).toMatch(/close it/i)
+    expect(e.message).toContain('Open elsewhere.pdf')
   })
 })

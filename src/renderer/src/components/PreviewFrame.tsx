@@ -21,9 +21,10 @@ export function PreviewFrame(props: { html: string; title: string }): React.JSX.
     return () => observer.disconnect()
   }, [])
 
+  // The body, not the document: the document is never shorter than the frame, so it could only grow.
   const measure = (): void => {
     const doc = frame.current?.contentDocument
-    if (doc) setHeight(Math.max(A4_HEIGHT_PX, doc.documentElement.scrollHeight))
+    if (doc) setHeight(Math.max(A4_HEIGHT_PX, doc.body.offsetHeight))
   }
 
   return (

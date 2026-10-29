@@ -1,22 +1,13 @@
 import { z } from 'zod'
 
-export const SECTION_KEYS = [
-  'experience',
-  'education',
-  'skills',
-  'languages',
-  'projects',
-  'certifications'
-] as const
+/** In the order the sections appear on the CV. */
+export const SECTION_KEYS = ['skills', 'education', 'experience'] as const
 export type SectionKey = (typeof SECTION_KEYS)[number]
 
 export const SECTION_PREFIX: Record<SectionKey, string> = {
-  experience: 'exp',
-  education: 'edu',
   skills: 'skill',
-  languages: 'lang',
-  projects: 'proj',
-  certifications: 'cert'
+  education: 'edu',
+  experience: 'exp'
 }
 
 const YearMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/)
@@ -27,7 +18,6 @@ const EndDate = z.union([YearMonth, z.literal(''), z.literal('present')])
 
 export const PersonalSchema = z.object({
   fullName: z.string(),
-  headline: z.string(),
   email: z.string(),
   phone: z.string(),
   location: z.string(),
@@ -60,27 +50,6 @@ export type EducationItem = z.infer<typeof EducationItemSchema>
 export const SkillItemSchema = z.object({ id: z.string(), name: z.string(), category: z.string() })
 export type SkillItem = z.infer<typeof SkillItemSchema>
 
-export const LanguageItemSchema = z.object({ id: z.string(), name: z.string(), level: z.string() })
-export type LanguageItem = z.infer<typeof LanguageItemSchema>
-
-export const ProjectItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  context: z.string(),
-  url: z.string(),
-  date: OptionalYearMonth,
-  bullets: z.array(z.string())
-})
-export type ProjectItem = z.infer<typeof ProjectItemSchema>
-
-export const CertificationItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  issuer: z.string(),
-  date: OptionalYearMonth
-})
-export type CertificationItem = z.infer<typeof CertificationItemSchema>
-
 const Counter = z.number().int().min(1)
 
 export const ProfileSchema = z.object({
@@ -90,16 +59,10 @@ export const ProfileSchema = z.object({
   experience: z.array(ExperienceItemSchema),
   education: z.array(EducationItemSchema),
   skills: z.array(SkillItemSchema),
-  languages: z.array(LanguageItemSchema),
-  projects: z.array(ProjectItemSchema),
-  certifications: z.array(CertificationItemSchema),
   nextIds: z.object({
-    experience: Counter,
-    education: Counter,
     skills: Counter,
-    languages: Counter,
-    projects: Counter,
-    certifications: Counter
+    education: Counter,
+    experience: Counter
   })
 })
 export type Profile = z.infer<typeof ProfileSchema>
@@ -107,21 +70,15 @@ export type Profile = z.infer<typeof ProfileSchema>
 export function emptyProfile(): Profile {
   return {
     version: 1,
-    personal: { fullName: '', headline: '', email: '', phone: '', location: '', links: [] },
+    personal: { fullName: '', email: '', phone: '', location: '', links: [] },
     summary: '',
     experience: [],
     education: [],
     skills: [],
-    languages: [],
-    projects: [],
-    certifications: [],
     nextIds: {
-      experience: 1,
-      education: 1,
       skills: 1,
-      languages: 1,
-      projects: 1,
-      certifications: 1
+      education: 1,
+      experience: 1
     }
   }
 }
@@ -175,29 +132,19 @@ const ItemId = z.string().describe('Exact id of the item in the candidate profil
 
 export const CvLabelsSchema = z
   .object({
-    profile: z.string(),
-    experience: z.string(),
-    education: z.string(),
     skills: z.string(),
-    languages: z.string(),
-    projects: z.string(),
-    certifications: z.string(),
+    education: z.string(),
+    experience: z.string(),
     present: z.string().describe('Word used for an ongoing period, e.g. "Present" or "nu"')
   })
   .describe("Section headings in the job posting's language")
 export type CvLabels = z.infer<typeof CvLabelsSchema>
 
 export const CvContentSchema = z.object({
-  headline: z.string(),
   summary: z.string(),
-  experience: z.array(z.object({ id: ItemId, title: z.string(), bullets: z.array(z.string()) })),
-  education: z.array(z.object({ id: ItemId, degree: z.string(), details: z.array(z.string()) })),
   skills: z.array(z.object({ id: ItemId, name: z.string(), category: z.string() })),
-  languages: z.array(z.object({ id: ItemId, name: z.string(), level: z.string() })),
-  projects: z.array(
-    z.object({ id: ItemId, name: z.string(), context: z.string(), bullets: z.array(z.string()) })
-  ),
-  certifications: z.array(z.object({ id: ItemId, name: z.string() })),
+  education: z.array(z.object({ id: ItemId, degree: z.string(), details: z.array(z.string()) })),
+  experience: z.array(z.object({ id: ItemId, title: z.string(), bullets: z.array(z.string()) })),
   labels: CvLabelsSchema
 })
 export type CvContent = z.infer<typeof CvContentSchema>

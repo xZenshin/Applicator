@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { locateClaude } from '../../src/main/claude/locate'
 import { generateApplication } from '../../src/main/llm/pipeline'
 import { makeRunFn } from '../../src/main/llm/run-fn'
+import { SECTION_KEYS } from '../../src/shared/types'
 import { sampleProfile, sampleStyle } from '../fixtures/sample-data'
 
 const DANISH_POSTING = `Nordlys Energi A/S søger en Data Engineer til vores analyseteam i København.
@@ -48,7 +49,7 @@ describe.skipIf(process.env.LIVE_CLI !== '1')('live Claude CLI', () => {
     expect(out.job.company).toContain('Nordlys')
     expect(out.cv.experience.map((e) => e.id)).toContain('exp_01')
     const known = new Set(Object.values(profile).flatMap((v) => (Array.isArray(v) ? v.map((i: { id?: string }) => i.id) : [])))
-    for (const section of ['experience', 'education', 'skills', 'languages', 'projects', 'certifications'] as const) {
+    for (const section of SECTION_KEYS) {
       for (const item of out.cv[section]) expect(known.has(item.id)).toBe(true)
     }
     expect(out.letter.paragraphs.length).toBeGreaterThan(0)

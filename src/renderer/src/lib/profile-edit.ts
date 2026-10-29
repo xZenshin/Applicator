@@ -11,12 +11,6 @@ function blankItem(section: SectionKey, id: string): ProfileItem {
       return { id, degree: '', institution: '', location: '', start: '', end: '', details: [] }
     case 'skills':
       return { id, name: '', category: '' }
-    case 'languages':
-      return { id, name: '', level: '' }
-    case 'projects':
-      return { id, name: '', context: '', url: '', date: '', bullets: [] }
-    case 'certifications':
-      return { id, name: '', issuer: '', date: '' }
   }
 }
 

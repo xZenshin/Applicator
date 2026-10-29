@@ -23,7 +23,6 @@ export function sampleProfile(): Profile {
     version: 1,
     personal: {
       fullName: 'Jane Doe',
-      headline: 'Data Engineer',
       email: 'jane@example.com',
       phone: '+45 12 34 56 78',
       location: 'Copenhagen, Denmark',
@@ -65,30 +64,10 @@ export function sampleProfile(): Profile {
       { id: 'skill_01', name: 'Python', category: 'Programming' },
       { id: 'skill_02', name: 'SQL', category: 'Programming' }
     ],
-    languages: [
-      { id: 'lang_01', name: 'Danish', level: 'Native' },
-      { id: 'lang_02', name: 'English', level: 'Fluent' }
-    ],
-    projects: [
-      {
-        id: 'proj_01',
-        name: 'Open-source ETL toolkit',
-        context: 'Side project',
-        url: 'https://github.com/janedoe/etl',
-        date: '2023-05',
-        bullets: ['Small library for incremental loads']
-      }
-    ],
-    certifications: [
-      { id: 'cert_01', name: 'Azure Data Engineer Associate', issuer: 'Microsoft', date: '2022-11' }
-    ],
     nextIds: {
-      experience: 3,
-      education: 2,
       skills: 3,
-      languages: 3,
-      projects: 2,
-      certifications: 2
+      education: 2,
+      experience: 3
     }
   })
 }
@@ -120,24 +99,16 @@ export function sampleJob(): JobInfo {
 
 export function sampleCv(): CvContent {
   return CvContentSchema.parse({
-    headline: 'Data Engineer',
     summary: 'Data engineer with five years of experience building reliable pipelines.',
     experience: [
       { id: 'exp_01', title: 'Data Engineer', bullets: ['Built batch and streaming pipelines in Python'] }
     ],
     education: [{ id: 'edu_01', degree: 'MSc Computer Science', details: [] }],
     skills: [{ id: 'skill_01', name: 'Python', category: 'Programming' }],
-    languages: [{ id: 'lang_01', name: 'Danish', level: 'Native' }],
-    projects: [],
-    certifications: [],
     labels: {
-      profile: 'Profile',
-      experience: 'Experience',
+      skills: 'Technical Skills',
       education: 'Education',
-      skills: 'Skills',
-      languages: 'Languages',
-      projects: 'Projects',
-      certifications: 'Certifications',
+      experience: 'Experience',
       present: 'Present'
     }
   })

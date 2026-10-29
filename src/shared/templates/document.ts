@@ -1,12 +1,12 @@
-import { BASE_CSS } from './base-css'
 import { escapeHtml } from './escape'
 
-/** A self-contained HTML document; `fontCss` is trusted CSS (embedded @font-face rules). */
+/** A self-contained HTML document; `css` and `fontCss` (embedded @font-face rules) are trusted. */
 export function htmlDocument(a: {
   title: string
   language: string
   bodyClass: string
   body: string
+  css: string
   fontCss?: string
 }): string {
   return `<!doctype html>
@@ -15,7 +15,7 @@ export function htmlDocument(a: {
 <meta charset="utf-8">
 <title>${escapeHtml(a.title)}</title>
 <style>${a.fontCss ?? ''}
-${BASE_CSS}</style>
+${a.css}</style>
 </head>
 <body class="${a.bodyClass}">
 ${a.body}

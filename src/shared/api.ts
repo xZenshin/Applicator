@@ -37,6 +37,11 @@ export interface Api {
   profile: {
     get(): Promise<Profile>
     save(p: Profile): Promise<void>
+    /** Asks where to save, then writes the CV PDF there. Returns the path, or null if cancelled. */
+    exportPdf(html: string): Promise<string | null>
+    /** Open or reveal the PDF saved by the last exportPdf. */
+    openPdf(): Promise<void>
+    showPdf(): Promise<void>
   }
   style: {
     get(): Promise<Style>
@@ -68,7 +73,7 @@ export interface Api {
 /** Every invokable method; the IPC channel is "<group>:<method>". */
 export const CHANNELS = {
   settings: ['get', 'save', 'testConnection', 'pickFile', 'pickFolder'],
-  profile: ['get', 'save'],
+  profile: ['get', 'save', 'exportPdf', 'openPdf', 'showPdf'],
   style: ['get', 'save'],
   llm: ['generate', 'reviseCv', 'reviseLetter', 'cancel'],
   applications: ['list', 'get', 'saveDraft', 'exportPdfs', 'openFile', 'showFolder', 'trash']

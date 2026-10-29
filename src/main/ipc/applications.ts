@@ -7,11 +7,7 @@ import { exportApplicationPdfs } from '../pdf/export'
 import { htmlToPdf } from '../pdf/print'
 import { applicationDir, listApplications, loadApplication, saveDraft } from '../storage/applications'
 import { handle } from './handle'
-
-async function open(path: string): Promise<void> {
-  const error = await shell.openPath(path)
-  if (error) throw new AppError('open_failed', `Could not open ${path}: ${error}`)
-}
+import { openPath } from './open-path'
 
 export function registerApplicationsIpc(): void {
   handle('applications:list', async () => listApplications(await getDataDir()))
@@ -28,10 +24,10 @@ export function registerApplicationsIpc(): void {
 
   handle('applications:openFile', async (id: string, fileName: string) => {
     if (!fileName || basename(fileName) !== fileName) throw new AppError('bad_id', `Invalid file name: "${fileName}"`)
-    await open(join(applicationDir(await getDataDir(), id), fileName))
+    await openPath(join(applicationDir(await getDataDir(), id), fileName))
   })
 
-  handle('applications:showFolder', async (id: string) => open(applicationDir(await getDataDir(), id)))
+  handle('applications:showFolder', async (id: string) => openPath(applicationDir(await getDataDir(), id)))
 
   handle('applications:trash', async (id: string) => shell.trashItem(applicationDir(await getDataDir(), id)))
 }

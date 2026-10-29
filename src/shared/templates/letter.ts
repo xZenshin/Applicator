@@ -1,4 +1,5 @@
 import type { ApplicationLetter, Profile } from '../types'
+import { LETTER_CSS } from './base-css'
 import { htmlDocument } from './document'
 import { escapeHtml as e } from './escape'
 import { formatLetterDate } from './format'
@@ -29,6 +30,7 @@ export function renderLetterHtml(
     language: opts.language,
     bodyClass: 'letter',
     body: body.filter(Boolean).join('\n'),
+    css: LETTER_CSS,
     fontCss: opts.fontCss
   })
 }

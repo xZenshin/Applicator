@@ -6,28 +6,18 @@ import { SECTION_TITLES, itemLabel } from '../lib/profile-sections'
 import { LinesInput } from './LinesInput'
 
 const CV_FIELDS: Record<SectionKey, { key: string; label: string; kind: 'text' | 'lines' }[]> = {
-  experience: [
-    { key: 'title', label: 'Job title', kind: 'text' },
-    { key: 'bullets', label: 'Bullet points, one per line', kind: 'lines' }
-  ],
-  education: [
-    { key: 'degree', label: 'Degree', kind: 'text' },
-    { key: 'details', label: 'Details, one per line', kind: 'lines' }
-  ],
   skills: [
     { key: 'name', label: 'Skill', kind: 'text' },
     { key: 'category', label: 'Category', kind: 'text' }
   ],
-  languages: [
-    { key: 'name', label: 'Language', kind: 'text' },
-    { key: 'level', label: 'Level', kind: 'text' }
+  education: [
+    { key: 'degree', label: 'Degree', kind: 'text' },
+    { key: 'details', label: 'Details: one line shows as a paragraph, several as bullet points', kind: 'lines' }
   ],
-  projects: [
-    { key: 'name', label: 'Name', kind: 'text' },
-    { key: 'context', label: 'Context', kind: 'text' },
-    { key: 'bullets', label: 'Bullet points, one per line', kind: 'lines' }
-  ],
-  certifications: [{ key: 'name', label: 'Name', kind: 'text' }]
+  experience: [
+    { key: 'title', label: 'Job title', kind: 'text' },
+    { key: 'bullets', label: 'Description: one line shows as a paragraph, several as bullet points', kind: 'lines' }
+  ]
 }
 
 interface Props {
@@ -45,7 +35,6 @@ export function CvEditor(props: Props): React.JSX.Element {
 
   return (
     <Stack gap="lg">
-      <TextInput disabled={props.disabled} label="Headline" value={cv.headline} onChange={(e) => onChange({ ...cv, headline: e.currentTarget.value })} />
       <Textarea disabled={props.disabled} label="Summary" autosize minRows={3} value={cv.summary} onChange={(e) => onChange({ ...cv, summary: e.currentTarget.value })} />
 
       {SECTION_KEYS.filter((s) => profile[s].length > 0).map((section) => {

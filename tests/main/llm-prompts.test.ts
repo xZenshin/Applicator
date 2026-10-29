@@ -14,7 +14,7 @@ const JOB_TEXT = 'Acme is hiring a Data Engineer with Python and SQL.'
 describe('buildTailorInput', () => {
   it('contains every profile item id and the job text, and omits nextIds', () => {
     const input = buildTailorInput({ profile: sampleProfile(), jobDescription: JOB_TEXT, instructions: '' })
-    for (const id of ['exp_01', 'exp_02', 'edu_01', 'skill_01', 'skill_02', 'lang_01', 'lang_02', 'proj_01', 'cert_01']) {
+    for (const id of ['exp_01', 'exp_02', 'edu_01', 'skill_01', 'skill_02']) {
       expect(input).toContain(id)
     }
     expect(input).toContain(JOB_TEXT)
@@ -81,7 +81,7 @@ describe('revise inputs', () => {
   })
 
   it('buildCvReviseInput includes the current CV and the requested change', () => {
-    const cv = { ...sampleCv(), headline: 'UNIQUE-HEADLINE' }
+    const cv = { ...sampleCv(), summary: 'UNIQUE-SUMMARY' }
     const input = buildCvReviseInput({
       profile: sampleProfile(),
       jobDescription: JOB_TEXT,
@@ -90,7 +90,7 @@ describe('revise inputs', () => {
       instruction: 'Add the SQL skill'
     })
     expect(input).toContain('## Current CV (JSON)')
-    expect(input).toContain('UNIQUE-HEADLINE')
+    expect(input).toContain('UNIQUE-SUMMARY')
     expect(input).toContain('## Requested change\nAdd the SQL skill')
   })
 })
@@ -112,5 +112,15 @@ describe('revise system prompts', () => {
     expect(LETTER_REVISE_SYSTEM).toMatch(/requested change takes priority over the target length/i)
     expect(LETTER_REVISE_SYSTEM).toMatch(/never over rule 3/i)
     expect(CV_REVISE_SYSTEM).toMatch(/requested change takes priority/i)
+  })
+})
+
+describe('CV prompts', () => {
+  it('only ask for the summary and the sections on the CV', async () => {
+    const { TAILOR_SYSTEM, CV_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    for (const prompt of [TAILOR_SYSTEM, CV_REVISE_SYSTEM]) {
+      expect(prompt).not.toMatch(/headline|language names|links/i)
+      expect(prompt).toMatch(/summary: 2-4 sentences/)
+    }
   })
 })

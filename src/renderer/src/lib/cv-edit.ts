@@ -1,5 +1,5 @@
-import type { CvContent, Profile, SectionKey } from '../../../shared/types'
-import { moveItem } from './profile-edit'
+import { SECTION_KEYS, type CvLabels, type CvContent, type Profile, type SectionKey } from '../../../shared/types'
+import { moveItem, type ProfileItem } from './profile-edit'
 
 export type CvEntry<S extends SectionKey = SectionKey> = CvContent[S][number]
 
@@ -23,24 +23,31 @@ export function entryFromProfile(profile: Profile, section: SectionKey, id: stri
       const p = find(profile.skills)
       return { id, name: p.name, category: p.category }
     }
-    case 'languages': {
-      const p = find(profile.languages)
-      return { id, name: p.name, level: p.level }
-    }
-    case 'projects': {
-      const p = find(profile.projects)
-      return { id, name: p.name, context: p.context, bullets: p.bullets }
-    }
-    case 'certifications': {
-      const p = find(profile.certifications)
-      return { id, name: p.name }
-    }
   }
 }
+
+const ENGLISH_LABELS: CvLabels = {
+  skills: 'Technical Skills',
+  education: 'Education',
+  experience: 'Experience',
+  present: 'Present'
+}
+
+const isBlank = (item: ProfileItem): boolean =>
+  Object.entries(item).every(([key, value]) => key === 'id' || value === '' || (Array.isArray(value) && value.length === 0))
 
 const entries = (cv: CvContent, section: SectionKey): CvEntry[] => cv[section] as CvEntry[]
 const withEntries = (cv: CvContent, section: SectionKey, items: CvEntry[]): CvContent =>
   ({ ...cv, [section]: items }) as CvContent
+
+/** The whole profile as an untailored CV, for previewing everything entered so far. */
+export function cvFromProfile(profile: Profile): CvContent {
+  const empty: CvContent = { summary: profile.summary, skills: [], education: [], experience: [], labels: ENGLISH_LABELS }
+  return SECTION_KEYS.reduce((cv, section) => {
+    const items = (profile[section] as ProfileItem[]).filter((item) => !isBlank(item))
+    return withEntries(cv, section, items.map((item) => entryFromProfile(profile, section, item.id)))
+  }, empty)
+}
 
 /** Removes the item if it's in the CV; otherwise appends it with its original text. */
 export function toggleCvItem(

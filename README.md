@@ -21,7 +21,7 @@ Applicator finds `claude.exe` automatically (on `PATH`, in `%USERPROFILE%\.local
 
 ## Using the app
 
-1. **My CV**: enter your personal details and everything you might want on a CV: experience, education, skills, languages, projects, certifications. Each item gets a permanent id (`exp_01`, `skill_03`, …) that Claude uses to refer to it.
+1. **My CV**: enter your personal details, an intro summary and everything you might want on a CV: technical skills, education and experience. A live preview next to the form shows how the CV looks, and **Download PDF** saves it as a PDF wherever you choose. Each item gets a permanent id (`exp_01`, `skill_03`, …) that Claude uses to refer to it.
 2. **Writing style**: paste 2–3 applications you wrote yourself and, optionally, default instructions (e.g. "Keep it under one page").
 3. **New application**: paste the full job posting (plus optional extra instructions) and click **Generate**. This usually takes 1–2 minutes.
 4. **Review**: edit the letter and CV next to a live preview, tick or untick CV items, or ask Claude for changes ("Make it shorter"), with one-step Undo. Click **Export PDFs** when you're happy.
@@ -67,6 +67,8 @@ npm run typecheck
 ```
 
 A live smoke test against the real CLI is skipped by default. Run it with `$env:LIVE_CLI = '1'; npx vitest run tests/main/live-cli.test.ts` (optionally set `LIVE_MODEL`).
+
+The CV's small-caps headings use "Cabin Small Caps", a font generated from Cabin by `scripts/make-small-caps-font.py` (needs Python with `pip install fonttools brotli`). The generated fonts are committed in `src/renderer/src/assets/fonts`, so you only need to run it again if Cabin is updated.
 
 If `npm run dev` exits with `Cannot read properties of undefined (reading 'isPackaged')`, your shell has `ELECTRON_RUN_AS_NODE` set (some editors and tools set it). Clear it first: `Remove-Item Env:ELECTRON_RUN_AS_NODE`.
 

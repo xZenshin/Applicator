@@ -62,6 +62,11 @@ describe('pdf names', () => {
     expect(cvPdfName('Jane Doe', 'Acme')).toBe('CV - Jane Doe - Acme.pdf')
   })
 
+  it('leaves out a missing company or name from the CV file name', () => {
+    expect(cvPdfName('Jane Doe')).toBe('CV - Jane Doe.pdf')
+    expect(cvPdfName('')).toBe('CV.pdf')
+  })
+
   it('builds the application file name and sanitizes it', () => {
     expect(letterPdfName('Acme', 'Data/ML Engineer')).toBe(
       'Application - Acme - Data ML Engineer.pdf'

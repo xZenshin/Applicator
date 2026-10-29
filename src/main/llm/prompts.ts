@@ -5,10 +5,10 @@ const CV_RULES = `Rules:
 1. Use only information from the candidate profile. Never add skills, tools, employers, numbers, achievements or responsibilities that are not in the profile. If the posting asks for something the candidate lacks, leave it out.
 2. Select only the items that are relevant to this posting. Reference each one by its exact id. Never output an id that is not in the profile, and never move an id to a different section than the one it comes from. Within each section, order items from most to least relevant.
 3. Light rewording only: you may rephrase, shorten, reorder or drop bullet points, and echo the posting's terminology where it truthfully describes the candidate's experience. Do not exaggerate.
-4. Write all text (titles, bullets, degree names, skill names and categories, language names and levels, the headline, the summary and the section labels) in the language of the job posting. Proper nouns, product names and technologies stay as they are.
-5. headline: one line describing the candidate for this role. summary: 2-4 sentences based on the profile summary and the selected items.
+4. Write all text (job titles, bullets, degree names and details, skill names and categories, the summary and the section labels) in the language of the job posting. Proper nouns, product names and technologies stay as they are.
+5. summary: 2-4 sentences based on the profile summary and the selected items.
 6. labels: the section headings, and the word for an ongoing period ("present"), in the posting's language.
-7. Dates, employers, institutions, locations and links are added later from the profile by id, so do not put them in the text fields.
+7. Dates, employers, institutions and locations are added later from the profile by id, so do not put them in the text fields.
 8. Follow the candidate's extra instructions unless they conflict with these rules.`
 
 const LETTER_RULES = `Rules:

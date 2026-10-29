@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { AppError } from '../../shared/errors'
 import { cvPdfName, letterPdfName } from '../../shared/filenames'
 import type { ApplicationMeta } from '../../shared/types'
@@ -36,4 +36,20 @@ export async function exportApplicationPdfs(a: {
   await writePdf(dir, cvPdf, cv)
   await writePdf(dir, letterPdf, letter)
   return setExported(a.dataDir, a.id, { cvPdf, letterPdf }, a.now)
+}
+
+/**
+ * Asks where to save, then prints the CV HTML (exactly what the preview shows) there.
+ * Returns the saved path, or null if the user cancelled.
+ */
+export async function saveCvPdf(a: {
+  html: string
+  defaultPath: string
+  choosePath: (defaultPath: string) => Promise<string | null>
+  toPdf: (html: string) => Promise<Buffer>
+}): Promise<string | null> {
+  const path = await a.choosePath(a.defaultPath)
+  if (!path) return null
+  await writePdf(dirname(path), basename(path), await a.toPdf(a.html))
+  return path
 }
