@@ -5,6 +5,7 @@ import { SettingsSchema, type LocateResult, type Settings } from '../shared/type
 import { CLAUDE_MESSAGES, ClaudeError } from './claude/errors'
 import { locateClaude, type LocateFs } from './claude/locate'
 import type { ClaudeCommand } from './claude/run'
+import { makeRunFn, type RunFn } from './llm/run-fn'
 import { resolveDataDir } from './storage/paths'
 import { loadSettings, saveSettings } from './storage/settings'
 
@@ -55,4 +56,10 @@ export async function requireClaudeCommand(): Promise<ClaudeCommand> {
 /** Empty working directory for CLI calls, so no project CLAUDE.md or settings get picked up. */
 export function claudeWorkDir(): string {
   return join(app.getPath('userData'), 'claude-workdir')
+}
+
+export async function makeAppRunFn(signal: AbortSignal): Promise<RunFn> {
+  const command = await requireClaudeCommand()
+  const { model } = await getSettings()
+  return makeRunFn({ command, model, cwd: claudeWorkDir(), signal })
 }
