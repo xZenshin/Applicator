@@ -32,4 +32,6 @@ export function registerApplicationsIpc(): void {
   })
 
   handle('applications:showFolder', async (id: string) => open(applicationDir(await getDataDir(), id)))
+
+  handle('applications:trash', async (id: string) => shell.trashItem(applicationDir(await getDataDir(), id)))
 }
