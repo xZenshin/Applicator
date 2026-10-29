@@ -105,3 +105,12 @@ describe('toCliSchema', () => {
     expect(Object.keys(schema.properties)).toEqual(['job', 'cv'])
   })
 })
+
+describe('revise system prompts', () => {
+  it('give the requested change priority over target length and samples, but not over facts', async () => {
+    const { LETTER_REVISE_SYSTEM, CV_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    expect(LETTER_REVISE_SYSTEM).toMatch(/requested change takes priority over the target length/i)
+    expect(LETTER_REVISE_SYSTEM).toMatch(/never over rule 3/i)
+    expect(CV_REVISE_SYSTEM).toMatch(/requested change takes priority/i)
+  })
+})

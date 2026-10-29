@@ -29,7 +29,7 @@ export const CV_REVISE_SYSTEM = `You revise a CV that was already tailored to a 
 
 ${CV_RULES}
 
-Apply the requested change and keep everything else as it is. You may add items from the profile if the change calls for it. Return the complete revised CV.`
+Apply the requested change and keep everything else as it is. The requested change takes priority over rule 2 (which items to select) and rule 5 (lengths), but never over rule 1: do not add facts that are not in the profile. You may add items from the profile if the change calls for it. Return the complete revised CV.`
 
 export const LETTER_SYSTEM = `You write a job application letter for a candidate. You receive the job posting, an analysis of it, the candidate's full profile, a CV already tailored to this job, applications the candidate wrote themselves, a target length, and instructions.
 
@@ -39,7 +39,7 @@ export const LETTER_REVISE_SYSTEM = `You revise a job application letter. You re
 
 ${LETTER_RULES}
 
-Apply the requested change and keep everything else as it is. Return the complete revised letter.`
+Apply the requested change and keep everything else as it is. The requested change takes priority over the target length and the writing samples, but never over rule 3: do not add facts that are not in the profile or the tailored CV. Return the complete revised letter.`
 
 const DEFAULT_TARGET_WORDS = 350
 
