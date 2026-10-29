@@ -110,3 +110,22 @@ describe('applicationDir', () => {
     )
   })
 })
+
+describe('job metadata edits', () => {
+  it('saveDraft keeps meta company, role and language in sync with draft.job', async () => {
+    const meta = await create(new Date(2026, 9, 29))
+    const draft = sampleDraft()
+    draft.job = { ...draft.job, company: 'Acme Corp', role: 'Senior Data Engineer', language: 'da' }
+    const updated = await saveDraft(dataDir, meta.id, draft, new Date(2026, 9, 30))
+    expect(updated).toMatchObject({ id: meta.id, company: 'Acme Corp', role: 'Senior Data Engineer', language: 'da' })
+    expect((await listApplications(dataDir))[0].company).toBe('Acme Corp')
+  })
+})
+
+describe('listApplications resilience', () => {
+  it('skips a folder whose files cannot be read at all', async () => {
+    await create(new Date(2026, 9, 20), 'Good Co')
+    await mkdir(join(dataDir, 'applications', 'unreadable', 'meta.json'), { recursive: true })
+    expect((await listApplications(dataDir)).map((m) => m.company)).toEqual(['Good Co'])
+  })
+})

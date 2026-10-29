@@ -96,3 +96,24 @@ describe('renderLetterHtml', () => {
     expect(html).toContain('Acme')
   })
 })
+
+describe('links in the CV', () => {
+  it('adds https:// to scheme-less links and never emits other schemes', () => {
+    const profile = sampleProfile()
+    profile.personal.links = [
+      { label: 'LinkedIn', url: 'linkedin.com/in/jane' },
+      { label: 'Evil', url: 'javascript:alert(1)' },
+      { label: 'Mail', url: 'mailto:jane@example.com' },
+      { label: 'Site', url: 'https://jane.dev' }
+    ]
+    profile.projects[0].url = 'github.com/janedoe/etl'
+    const cv = { ...sampleCv(), projects: [{ id: 'proj_01', name: 'ETL', context: '', bullets: [] }] }
+    const html = renderCvHtml(profile, cv, { language: 'en' })
+    expect(html).toContain('href="https://linkedin.com/in/jane"')
+    expect(html).toContain('href="mailto:jane@example.com"')
+    expect(html).toContain('href="https://jane.dev"')
+    expect(html).toContain('href="https://github.com/janedoe/etl"')
+    expect(html).not.toContain('javascript:')
+    expect(html).toContain('Evil')
+  })
+})

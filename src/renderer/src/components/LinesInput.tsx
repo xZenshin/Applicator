@@ -12,6 +12,7 @@ export function LinesInput(props: {
   onChange: (lines: string[]) => void
   resetKey: string
   minRows?: number
+  disabled?: boolean
 }): React.JSX.Element {
   const [text, setText] = useState(linesToText(props.value))
 
@@ -23,6 +24,7 @@ export function LinesInput(props: {
   return (
     <Textarea
       label={props.label}
+      disabled={props.disabled}
       autosize
       minRows={props.minRows ?? 2}
       value={text}

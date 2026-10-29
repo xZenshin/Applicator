@@ -45,3 +45,14 @@ describe('exportApplicationPdfs', () => {
     expect(await readFile(join(applicationDir(dataDir, id), 'CV - Jane Doe - Acme.pdf'), 'utf8')).toBe('v2')
   })
 })
+
+describe('export write failures', () => {
+  it('reports a PDF that cannot be written as export_failed with advice', async () => {
+    const { mkdir } = await import('node:fs/promises')
+    await mkdir(join(applicationDir(dataDir, id), 'CV - Jane Doe - Acme.pdf'))
+    const e = await exportApplicationPdfs({ dataDir, id, html: { cv: 'x', letter: 'y' }, toPdf, now: new Date() }).catch((x) => x)
+    expect(e.kind).toBe('export_failed')
+    expect(e.message).toMatch(/close it/i)
+    expect(e.message).toContain('CV - Jane Doe - Acme.pdf')
+  })
+})

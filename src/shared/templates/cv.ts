@@ -2,8 +2,14 @@ import { SECTION_KEYS, type CvContent, type Profile, type SectionKey } from '../
 import { htmlDocument } from './document'
 import { escapeHtml as e } from './escape'
 import { formatRange, formatYearMonth } from './format'
+import { safeHref } from './url'
 
 const join = (parts: string[], sep: string): string => parts.filter(Boolean).join(sep)
+function anchor(url: string, text: string): string {
+  const href = safeHref(url)
+  return href ? `<a href="${e(href)}">${e(text)}</a>` : e(text)
+}
+
 const bullets = (items: string[]): string =>
   items.length ? `<ul>${items.map((b) => `<li>${e(b)}</li>`).join('')}</ul>` : ''
 
@@ -61,7 +67,7 @@ function sectionBody(section: SectionKey, profile: Profile, cv: CvContent, langu
           const p = find(c.id)
           if (!p) return ''
           const head = `<strong>${e(c.name)}</strong>${c.context ? ` — ${e(c.context)}` : ''}`
-          const link = p.url ? `<div class="muted"><a href="${e(p.url)}">${e(p.url)}</a></div>` : ''
+          const link = p.url ? `<div class="muted">${anchor(p.url, p.url)}</div>` : ''
           return `<div class="entry"><div class="entry-head"><div>${head}</div><div class="dates">${e(formatYearMonth(p.date, language))}</div></div>${link}${bullets(c.bullets)}</div>`
         })
         .join('')
@@ -83,7 +89,7 @@ export function renderCvHtml(profile: Profile, cv: CvContent, opts: { language: 
   const { personal } = profile
   const links = personal.links
     .filter((l) => l.url || l.label)
-    .map((l) => `<a href="${e(l.url)}">${e(l.label || l.url)}</a>`)
+    .map((l) => anchor(l.url, l.label || l.url))
   const contact = join([e(personal.location), e(personal.email), e(personal.phone), ...links], ' · ')
 
   const parts = [

@@ -1,6 +1,6 @@
 import { Alert, Anchor, Button, Card, Group, Loader, Stack, Text, Textarea, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { GenerationStage } from '../../../shared/api'
 import { isProfileUsable } from '../../../shared/profile-checks'
@@ -35,6 +35,14 @@ export default function NewApplicationPage(): React.JSX.Element {
   const [stage, setStage] = useState<GenerationStage | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const mounted = useRef(true)
+
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
 
   useEffect(() => {
     api.profile.get().then(
@@ -63,12 +71,31 @@ export default function NewApplicationPage(): React.JSX.Element {
       const meta = await api.llm.generate({ jobDescription, instructions })
       sessionStorage.removeItem(JOB_KEY)
       sessionStorage.removeItem(INSTRUCTIONS_KEY)
-      navigate(`/review/${encodeURIComponent(meta.id)}`)
+      const path = `/review/${encodeURIComponent(meta.id)}`
+      if (mounted.current) {
+        navigate(path)
+      } else {
+        // The user moved on (maybe into another application's editor): don't pull them away.
+        notifications.show({
+          color: 'green',
+          autoClose: false,
+          title: 'Application ready',
+          message: (
+            <Group gap="xs" mt={4}>
+              <Text size="sm">{[meta.company, meta.role].filter(Boolean).join(' — ')}</Text>
+              <Button size="compact-xs" variant="light" onClick={() => (window.location.hash = `#${path}`)}>
+                Open
+              </Button>
+            </Group>
+          )
+        })
+      }
     } catch (e) {
       if (errorKind(e) === 'cancelled') notifications.show({ message: 'Generation cancelled.' })
-      else setError(errorMessage(e))
+      else if (mounted.current) setError(errorMessage(e))
+      else notifications.show({ color: 'red', title: 'Could not generate', message: errorMessage(e), autoClose: false })
     } finally {
-      setRunning(false)
+      if (mounted.current) setRunning(false)
     }
   }
 

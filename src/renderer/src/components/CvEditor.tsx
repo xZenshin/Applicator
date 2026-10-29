@@ -37,6 +37,7 @@ interface Props {
   /** `toggled` reports an item the user ticked (added) or unticked. */
   onChange: (cv: CvContent, toggled?: { id: string; added: boolean }) => void
   resetKey: number
+  disabled?: boolean
 }
 
 export function CvEditor(props: Props): React.JSX.Element {
@@ -44,8 +45,8 @@ export function CvEditor(props: Props): React.JSX.Element {
 
   return (
     <Stack gap="lg">
-      <TextInput label="Headline" value={cv.headline} onChange={(e) => onChange({ ...cv, headline: e.currentTarget.value })} />
-      <Textarea label="Summary" autosize minRows={3} value={cv.summary} onChange={(e) => onChange({ ...cv, summary: e.currentTarget.value })} />
+      <TextInput disabled={props.disabled} label="Headline" value={cv.headline} onChange={(e) => onChange({ ...cv, headline: e.currentTarget.value })} />
+      <Textarea disabled={props.disabled} label="Summary" autosize minRows={3} value={cv.summary} onChange={(e) => onChange({ ...cv, summary: e.currentTarget.value })} />
 
       {SECTION_KEYS.filter((s) => profile[s].length > 0).map((section) => {
         const selected = cv[section] as CvEntry[]
@@ -67,7 +68,7 @@ export function CvEditor(props: Props): React.JSX.Element {
                 <Card key={entry.id} withBorder padding="sm">
                   <Group justify="space-between" wrap="nowrap" mb="xs">
                     <Group gap="xs" wrap="nowrap">
-                      <Checkbox checked onChange={() => toggle(entry.id)} label={source ? itemLabel(section, source) : entry.id} />
+                      <Checkbox disabled={props.disabled} checked onChange={() => toggle(entry.id)} label={source ? itemLabel(section, source) : entry.id} />
                       {props.untranslatedIds.includes(entry.id) && (
                         <Tooltip label="Added by you: not tailored or translated. Use Revise to adapt it." multiline w={260}>
                           <Badge size="xs" color="yellow" variant="light">
@@ -77,14 +78,14 @@ export function CvEditor(props: Props): React.JSX.Element {
                       )}
                     </Group>
                     <Group gap={4} wrap="nowrap">
-                      <ActionIcon variant="subtle" color="gray" aria-label="Move up" disabled={index === 0} onClick={() => onChange(moveCvItem(cv, section, entry.id, -1))}>
+                      <ActionIcon variant="subtle" color="gray" aria-label="Move up" disabled={props.disabled || index === 0} onClick={() => onChange(moveCvItem(cv, section, entry.id, -1))}>
                         ↑
                       </ActionIcon>
                       <ActionIcon
                         variant="subtle"
                         color="gray"
                         aria-label="Move down"
-                        disabled={index === selected.length - 1}
+                        disabled={props.disabled || index === selected.length - 1}
                         onClick={() => onChange(moveCvItem(cv, section, entry.id, 1))}
                       >
                         ↓
@@ -99,6 +100,7 @@ export function CvEditor(props: Props): React.JSX.Element {
                           key={f.key}
                           label={f.label}
                           size="xs"
+                          disabled={props.disabled}
                           value={(entry as Record<string, unknown>)[f.key] as string}
                           onChange={(e) => onChange(updateCvItem(cv, section, entry.id, { [f.key]: e.currentTarget.value }))}
                         />
@@ -109,6 +111,7 @@ export function CvEditor(props: Props): React.JSX.Element {
                     .map((f) => (
                       <Stack key={f.key} mt="xs">
                         <LinesInput
+                          disabled={props.disabled}
                           label={f.label}
                           value={(entry as Record<string, unknown>)[f.key] as string[]}
                           resetKey={`${entry.id}-${props.resetKey}`}
@@ -120,7 +123,7 @@ export function CvEditor(props: Props): React.JSX.Element {
               )
             })}
             {unselected.map((item) => (
-              <Checkbox key={item.id} checked={false} onChange={() => toggle(item.id)} label={<Text c="dimmed" size="sm">{itemLabel(section, item)}</Text>} />
+              <Checkbox key={item.id} disabled={props.disabled} checked={false} onChange={() => toggle(item.id)} label={<Text c="dimmed" size="sm">{itemLabel(section, item)}</Text>} />
             ))}
           </Stack>
         )

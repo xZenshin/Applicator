@@ -91,7 +91,7 @@ export default function HistoryDetailPage(): React.JSX.Element {
           </Card>
         </Tabs.Panel>
         <Tabs.Panel value="letter" pt="md" maw={820}>
-          <PreviewFrame html={letterHtml(profile, draft, meta, letterDate)} title="Application" />
+          <PreviewFrame html={letterHtml(profile, draft, letterDate)} title="Application" />
         </Tabs.Panel>
         <Tabs.Panel value="cv" pt="md" maw={820}>
           <PreviewFrame html={cvHtml(profile, draft)} title="CV" />

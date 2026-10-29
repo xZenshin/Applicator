@@ -1,4 +1,4 @@
-import { Alert, Badge, Box, Button, Grid, Group, Loader, Stack, Tabs, Text, Title } from '@mantine/core'
+import { Alert, Badge, Box, Button, Grid, Group, Loader, Select, Stack, Tabs, Text, TextInput, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -11,6 +11,14 @@ import { PreviewFrame } from '../components/PreviewFrame'
 import { RevisePanel } from '../components/RevisePanel'
 import { useAutosave } from '../hooks/useAutosave'
 import { cvHtml, letterHtml } from '../lib/render'
+
+const LANGUAGES = [
+  { value: 'da', label: 'Danish' },
+  { value: 'en', label: 'English' },
+  { value: 'sv', label: 'Swedish' },
+  { value: 'nb', label: 'Norwegian' },
+  { value: 'de', label: 'German' }
+]
 
 interface UndoState {
   letter?: ApplicationLetter
@@ -26,6 +34,7 @@ export default function ReviewPage(): React.JSX.Element {
   const [undo, setUndo] = useState<UndoState>({})
   const [resetKey, setResetKey] = useState(0)
   const [exporting, setExporting] = useState(false)
+  const [revising, setRevising] = useState<'letter' | 'cv' | null>(null)
   const autosave = useAutosave(draft, async (d) => setMeta(await api.applications.saveDraft(id, d)))
 
   useEffect(() => {
@@ -39,10 +48,7 @@ export default function ReviewPage(): React.JSX.Element {
     )
   }, [id])
 
-  const letterPreview = useMemo(
-    () => (record && draft && meta ? letterHtml(record.profile, draft, meta) : ''),
-    [record, draft, meta]
-  )
+  const letterPreview = useMemo(() => (record && draft ? letterHtml(record.profile, draft) : ''), [record, draft])
   const cvPreview = useMemo(() => (record && draft ? cvHtml(record.profile, draft) : ''), [record, draft])
 
   if (loadError) return <Alert color="red" title="Could not open this application">{loadError}</Alert>
@@ -82,21 +88,38 @@ export default function ReviewPage(): React.JSX.Element {
     }
   }
 
-  const reviseLetter = async (instruction: string): Promise<void> => {
+  // The part being revised is read-only until Claude answers, so no edit is silently replaced.
+  const whileRevising =
+    (part: 'letter' | 'cv', run: (instruction: string) => Promise<void>) =>
+    async (instruction: string): Promise<void> => {
+      setRevising(part)
+      try {
+        await run(instruction)
+      } finally {
+        setRevising(null)
+      }
+    }
+
+  const reviseLetter = whileRevising('letter', async (instruction) => {
     const previous = draft.letter
     const letter = await api.llm.reviseLetter({ id, cv: draft.cv, letter: draft.letter, instruction })
     setUndo((u) => ({ ...u, letter: previous }))
     update((d) => ({ ...d, letter }))
     replaced()
-  }
+  })
 
-  const reviseCv = async (instruction: string): Promise<void> => {
+  const reviseCv = whileRevising('cv', async (instruction) => {
     const previous = { cv: draft.cv, untranslatedIds: draft.untranslatedIds }
     const result = await api.llm.reviseCv({ id, cv: draft.cv, instruction })
     setUndo((u) => ({ ...u, cv: previous }))
     update((d) => ({ ...d, cv: result.cv, untranslatedIds: [], warnings: [...d.warnings, ...result.warnings] }))
     replaced()
-  }
+  })
+
+  const setJob = (patch: Partial<Draft['job']>): void => update((d) => ({ ...d, job: { ...d.job, ...patch } }))
+  const languageOptions = LANGUAGES.some((l) => l.value === draft.job.language)
+    ? LANGUAGES
+    : [...LANGUAGES, { value: draft.job.language, label: draft.job.language.toUpperCase() }]
 
   const preview = (html: string, title: string): React.JSX.Element => (
     <Box style={{ position: 'sticky', top: 16 }}>
@@ -109,10 +132,24 @@ export default function ReviewPage(): React.JSX.Element {
       <Group justify="space-between" align="flex-start">
         <Stack gap={4}>
           <Group gap="xs">
-            <Title order={2}>{[meta.company, meta.role].filter(Boolean).join(' — ') || meta.id}</Title>
+            <Title order={2}>{[draft.job.company, draft.job.role].filter(Boolean).join(' — ') || meta.id}</Title>
             <Badge variant="light">{draft.job.language.toUpperCase()}</Badge>
           </Group>
           <AutosaveIndicator status={autosave.status} error={autosave.error} />
+          <Group gap="sm" align="flex-end" mt="xs">
+            <TextInput size="xs" w={220} label="Company" value={draft.job.company} onChange={(e) => setJob({ company: e.currentTarget.value })} />
+            <TextInput size="xs" w={220} label="Role" value={draft.job.role} onChange={(e) => setJob({ role: e.currentTarget.value })} />
+            <Select
+              size="xs"
+              w={150}
+              label="Language"
+              title="Sets date formatting. Use Revise to translate the text."
+              data={languageOptions}
+              value={draft.job.language}
+              allowDeselect={false}
+              onChange={(value) => value && setJob({ language: value })}
+            />
+          </Group>
         </Stack>
         <Group gap="xs">
           {meta.cvPdf && (
@@ -165,7 +202,7 @@ export default function ReviewPage(): React.JSX.Element {
                     replaced()
                   }}
                 />
-                <LetterEditor letter={draft.letter} resetKey={resetKey} onChange={(letter) => update((d) => ({ ...d, letter }))} />
+                <LetterEditor letter={draft.letter} resetKey={resetKey} disabled={revising === 'letter'} onChange={(letter) => update((d) => ({ ...d, letter }))} />
               </Stack>
             </Grid.Col>
             <Grid.Col span={7}>{preview(letterPreview, 'Application preview')}</Grid.Col>
@@ -192,6 +229,7 @@ export default function ReviewPage(): React.JSX.Element {
                   profile={record.profile}
                   untranslatedIds={draft.untranslatedIds}
                   resetKey={resetKey}
+                  disabled={revising === 'cv'}
                   onChange={(cv, toggled) =>
                     update((d) => ({
                       ...d,

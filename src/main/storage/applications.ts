@@ -89,8 +89,8 @@ export async function listApplications(dataDir: string): Promise<ApplicationMeta
   for (const name of names) {
     try {
       metas.push(await readMeta(dataDir, name))
-    } catch (e) {
-      if (!(e instanceof AppError)) throw e // broken or incomplete folder: skip it
+    } catch {
+      // Broken, incomplete or unreadable folder (e.g. an offline OneDrive file): skip it, keep the rest.
     }
   }
   return metas.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -118,7 +118,9 @@ export async function saveDraft(
 ): Promise<ApplicationMeta> {
   const meta = await readMeta(dataDir, id)
   await writeJsonAtomic(join(applicationDir(dataDir, id), DRAFT), DraftSchema.parse(draft))
-  return writeMeta(dataDir, { ...meta, updatedAt: now.toISOString() })
+  // Company, role and language can be corrected in the editor; meta mirrors them for History and PDF names.
+  const { company, role, language } = draft.job
+  return writeMeta(dataDir, { ...meta, company, role, language, updatedAt: now.toISOString() })
 }
 
 export async function setExported(

@@ -7,6 +7,7 @@ export function LetterEditor(props: {
   letter: ApplicationLetter
   onChange: (letter: ApplicationLetter) => void
   resetKey: number
+  disabled?: boolean
 }): React.JSX.Element {
   const { letter, onChange } = props
   const [body, setBody] = useState(paragraphsToText(letter.paragraphs))
@@ -18,10 +19,11 @@ export function LetterEditor(props: {
 
   return (
     <Stack gap="sm">
-      <TextInput label="Subject" value={letter.subject} onChange={(e) => onChange({ ...letter, subject: e.currentTarget.value })} />
-      <TextInput label="Greeting" value={letter.greeting} onChange={(e) => onChange({ ...letter, greeting: e.currentTarget.value })} />
+      <TextInput disabled={props.disabled} label="Subject" value={letter.subject} onChange={(e) => onChange({ ...letter, subject: e.currentTarget.value })} />
+      <TextInput disabled={props.disabled} label="Greeting" value={letter.greeting} onChange={(e) => onChange({ ...letter, greeting: e.currentTarget.value })} />
       <Textarea
         label="Body"
+        disabled={props.disabled}
         description="Separate paragraphs with a blank line."
         autosize
         minRows={12}
@@ -33,6 +35,7 @@ export function LetterEditor(props: {
       />
       <TextInput
         label="Sign-off"
+        disabled={props.disabled}
         description="Your name is added below it."
         value={letter.signOff}
         onChange={(e) => onChange({ ...letter, signOff: e.currentTarget.value })}

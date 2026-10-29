@@ -1,6 +1,6 @@
 import { AppShell, MantineProvider, NavLink, Title } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { HashRouter, Navigate, NavLink as RouterNavLink, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, NavLink as RouterNavLink, Route, Routes, useParams } from 'react-router-dom'
 import NewApplicationPage from './pages/NewApplicationPage'
 import ReviewPage from './pages/ReviewPage'
 import HistoryPage from './pages/HistoryPage'
@@ -8,6 +8,15 @@ import HistoryDetailPage from './pages/HistoryDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import StylePage from './pages/StylePage'
 import SettingsPage from './pages/SettingsPage'
+
+// Keyed by id: switching from one application to another must never reuse the previous one's state.
+function ReviewRoute(): React.JSX.Element {
+  return <ReviewPage key={useParams().id} />
+}
+
+function HistoryDetailRoute(): React.JSX.Element {
+  return <HistoryDetailPage key={useParams().id} />
+}
 
 const NAV = [
   { to: '/new', label: 'New application' },
@@ -37,9 +46,9 @@ function App(): React.JSX.Element {
             <Routes>
               <Route path="/" element={<Navigate to="/new" replace />} />
               <Route path="/new" element={<NewApplicationPage />} />
-              <Route path="/review/:id" element={<ReviewPage />} />
+              <Route path="/review/:id" element={<ReviewRoute />} />
               <Route path="/history" element={<HistoryPage />} />
-              <Route path="/history/:id" element={<HistoryDetailPage />} />
+              <Route path="/history/:id" element={<HistoryDetailRoute />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/style" element={<StylePage />} />
               <Route path="/settings" element={<SettingsPage />} />
