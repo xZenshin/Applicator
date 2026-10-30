@@ -13,6 +13,8 @@ function createWindow(): void {
     title: 'Applicator',
     show: false,
     autoHideMenuBar: true,
+    // The dark finish is the default, so the window opens dark instead of flashing white.
+    backgroundColor: '#0b0b0c',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

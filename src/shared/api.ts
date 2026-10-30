@@ -27,11 +27,20 @@ export interface ConnectionResult {
   message: string
 }
 
+/** For the sidebar's status line: a short label, with the full explanation in detail. */
+export interface ClaudeStatus {
+  ok: boolean
+  label: string
+  detail: string
+}
+
 export interface Api {
   settings: {
     get(): Promise<SettingsView>
     save(s: Settings): Promise<SettingsView>
     testConnection(): Promise<ConnectionResult>
+    /** Quick check for the sidebar; sends Claude no message. */
+    claudeStatus(): Promise<ClaudeStatus>
     pickFile(): Promise<string | null>
     pickFolder(): Promise<string | null>
   }
@@ -70,6 +79,8 @@ export interface Api {
     }): Promise<ApplicationLetter>
     cancel(): Promise<void>
     onProgress(cb: (s: GenerationStage) => void): () => void
+    /** True while Claude is generating or revising, false when it is done. */
+    onBusy(cb: (busy: boolean) => void): () => void
   }
   applications: {
     list(): Promise<ApplicationMeta[]>
@@ -85,7 +96,7 @@ export interface Api {
 
 /** Every invokable method; the IPC channel is "<group>:<method>". */
 export const CHANNELS = {
-  settings: ['get', 'save', 'testConnection', 'pickFile', 'pickFolder'],
+  settings: ['get', 'save', 'testConnection', 'claudeStatus', 'pickFile', 'pickFolder'],
   profile: ['get', 'save', 'exportPdf', 'openPdf', 'showPdf'],
   style: ['get', 'save'],
   llm: ['generate', 'reviseCv', 'reviseLetter', 'cancel'],
@@ -93,6 +104,7 @@ export const CHANNELS = {
 } as const
 
 export const PROGRESS_CHANNEL = 'llm:progress'
+export const BUSY_CHANNEL = 'llm:busy'
 
 export const ALL_CHANNELS: string[] = Object.entries(CHANNELS).flatMap(([group, methods]) =>
   methods.map((m) => `${group}:${m}`)
@@ -102,4 +114,5 @@ export const ALL_CHANNELS: string[] = Object.entries(CHANNELS).flatMap(([group, 
 export interface Bridge {
   invoke(channel: string, ...args: unknown[]): Promise<IpcResult<unknown>>
   onProgress(cb: (stage: GenerationStage) => void): () => void
+  onBusy(cb: (busy: boolean) => void): () => void
 }

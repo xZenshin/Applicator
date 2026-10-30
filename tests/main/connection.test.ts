@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ClaudeError } from '../../src/main/claude/errors'
 import type { ClaudeCommand } from '../../src/main/claude/run'
-import { assertSubscriptionAuth, testConnection } from '../../src/main/connection'
+import { assertSubscriptionAuth, claudeStatus, testConnection } from '../../src/main/connection'
 
 const command: ClaudeCommand = {
   file: process.execPath,
@@ -31,6 +31,34 @@ describe('assertSubscriptionAuth', () => {
     const e = await assertSubscriptionAuth(command, env({ FAKE_CLAUDE_AUTH: '{"loggedIn":false}' })).catch((x) => x)
     expect(e).toBeInstanceOf(ClaudeError)
     expect(e.kind).toBe('not_logged_in')
+  })
+})
+
+describe('claudeStatus', () => {
+  const found = async (): Promise<ClaudeCommand> => command
+
+  // In 'hang' mode a prompt would never return, so passing shows the check sends Claude no message.
+  it('says connected for a claude.ai login, without sending Claude a message', async () => {
+    const s = await claudeStatus(found, env({ FAKE_CLAUDE_MODE: 'hang' }))
+    expect(s).toMatchObject({ ok: true, label: 'Claude connected' })
+  })
+
+  it('names the problem in a short label and explains it in detail', async () => {
+    const loggedOut = await claudeStatus(found, env({ FAKE_CLAUDE_AUTH: '{"loggedIn":false}' }))
+    expect(loggedOut).toMatchObject({ ok: false, label: 'Not logged in' })
+    expect(loggedOut.detail).toContain('/login')
+
+    const console = await claudeStatus(found, env({ FAKE_CLAUDE_AUTH: '{"loggedIn":true,"authMethod":"console"}' }))
+    expect(console).toMatchObject({ ok: false, label: 'Not on subscription' })
+
+    const missing = async (): Promise<ClaudeCommand> => {
+      throw new ClaudeError('not_found', 'Claude Code was not found.')
+    }
+    expect(await claudeStatus(missing, env({}))).toEqual({
+      ok: false,
+      label: 'Claude not found',
+      detail: 'Claude Code was not found.'
+    })
   })
 })
 

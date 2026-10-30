@@ -1,4 +1,4 @@
-import type { ConnectionResult } from '../shared/api'
+import type { ClaudeStatus, ConnectionResult } from '../shared/api'
 import { AppError } from '../shared/errors'
 import { CLAUDE_MESSAGES, ClaudeError } from './claude/errors'
 import { getAuthStatus, runClaude, type AuthStatus, type ClaudeCommand } from './claude/run'
@@ -18,6 +18,27 @@ export async function assertSubscriptionAuth(
     )
   }
   return status
+}
+
+// Short enough for the sidebar; the detail explains.
+const STATUS_LABELS: Record<string, string> = {
+  not_found: 'Claude not found',
+  not_logged_in: 'Not logged in',
+  not_subscription: 'Not on subscription'
+}
+
+/** The sidebar's status line: is Claude Code there and logged in with claude.ai? Sends Claude no message, so it costs nothing. */
+export async function claudeStatus(
+  getCommand: () => Promise<ClaudeCommand>,
+  env: NodeJS.ProcessEnv = process.env
+): Promise<ClaudeStatus> {
+  try {
+    const status = await assertSubscriptionAuth(await getCommand(), env)
+    return { ok: true, label: 'Claude connected', detail: `Logged in via claude.ai (${status.subscriptionType ?? 'subscription'}).` }
+  } catch (e) {
+    if (e instanceof AppError) return { ok: false, label: STATUS_LABELS[e.kind] ?? 'Claude unavailable', detail: e.message }
+    throw e
+  }
 }
 
 const REPLY_SCHEMA = {

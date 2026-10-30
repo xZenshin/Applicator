@@ -108,7 +108,10 @@ export default function NewApplicationPage(): React.JSX.Element {
 
   return (
     <Stack maw={980} gap="lg">
-      <Title order={2}>New application</Title>
+      <Stack gap={4}>
+        <Title order={2}>New application</Title>
+        <Text className="k-lead">Paste a job posting, and Claude tailors your CV and application to it.</Text>
+      </Stack>
 
       <Stack gap={6}>
         <SegmentedControl
@@ -150,7 +153,11 @@ export default function NewApplicationPage(): React.JSX.Element {
         onChange={(e) => setJobDescription(e.currentTarget.value)}
       />
       <Textarea
-        label="Your own text (optional)"
+        label={
+          <>
+            Your own text <span className="k-meta">optional</span>
+          </>
+        }
         description={
           cvOnly
             ? 'Something you have already written for this application, such as why you want the job. Claude builds the summary at the top of the CV on it and may polish the wording.'
@@ -165,7 +172,11 @@ export default function NewApplicationPage(): React.JSX.Element {
         onChange={(e) => setOwnText(e.currentTarget.value)}
       />
       <Textarea
-        label="Extra instructions for this application (optional)"
+        label={
+          <>
+            Extra instructions for this application <span className="k-meta">optional</span>
+          </>
+        }
         placeholder="e.g. Emphasise my leadership experience. Mention that I'm relocating to Aarhus."
         autosize
         minRows={2}
@@ -180,9 +191,7 @@ export default function NewApplicationPage(): React.JSX.Element {
             <Group gap="sm">
               <Loader size="sm" />
               <Text>{stage ? STAGE_TEXT[stage] : 'Starting Claude…'}</Text>
-              <Text c="dimmed" size="sm">
-                {elapsed} s
-              </Text>
+              <span className="k-meta">{elapsed} s</span>
             </Group>
             <Button variant="default" onClick={() => api.llm.cancel()}>
               Cancel
@@ -191,12 +200,10 @@ export default function NewApplicationPage(): React.JSX.Element {
         </Card>
       ) : (
         <Group>
-          <Button size="md" onClick={generate} disabled={!profileUsable || !jobDescription.trim()}>
+          <Button onClick={generate} disabled={!profileUsable || !jobDescription.trim()}>
             {cvOnly ? 'Generate CV' : 'Generate CV and application'}
           </Button>
-          <Text size="sm" c="dimmed">
-            {cvOnly ? 'Usually takes under a minute.' : 'Usually takes 1–2 minutes.'}
-          </Text>
+          <span className="k-meta">{cvOnly ? 'Usually under a minute' : 'Usually 1–2 min'}</span>
         </Group>
       )}
 

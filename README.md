@@ -27,6 +27,8 @@ Applicator finds `claude.exe` automatically (on `PATH`, in `%USERPROFILE%\.local
 4. **Review**: edit the letter and CV next to a live preview, tick or untick CV items, or ask Claude for changes ("Make it shorter"), with one-step Undo. To change just one part, highlight it in the editor or the preview, click **Ask Claude** and say what to do with it ("Put more emphasis on my experience with Python"). Claude rewrites only that passage. Click **Export PDFs** when you're happy.
 5. **History**: browse, search, reopen, or delete earlier applications.
 
+The line at the bottom of the sidebar shows whether Claude Code is installed and logged in with your claude.ai account ("Claude connected"), and "Claude is working…" while it generates or revises. Checking it sends Claude no message, so it uses none of your plan. Click it to open **Settings**. The sun/moon button next to it switches between the dark finish (the default) and the light one; the app remembers your choice.
+
 ## Where your data lives
 
 Everything is stored as plain files in `Documents\Applicator` (you can change this in **Settings**):

@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { PROGRESS_CHANNEL, type GenerationStage } from '../../shared/api'
+import { BUSY_CHANNEL, PROGRESS_CHANNEL, type GenerationStage } from '../../shared/api'
 import { AppError } from '../../shared/errors'
 import type { ApplicationLetter, CvContent, Highlight } from '../../shared/types'
 import { CLAUDE_MESSAGES, ClaudeError } from '../claude/errors'
@@ -19,6 +19,7 @@ async function withClaude<T>(fn: (run: RunFn) => Promise<T>): Promise<T> {
   }
   const controller = new AbortController()
   current = controller
+  broadcast(BUSY_CHANNEL, true)
   try {
     if (!subscriptionVerified) {
       await assertSubscriptionAuth(await requireClaudeCommand())
@@ -28,12 +29,15 @@ async function withClaude<T>(fn: (run: RunFn) => Promise<T>): Promise<T> {
     return await fn(await makeAppRunFn(controller.signal))
   } finally {
     if (current === controller) current = null
+    broadcast(BUSY_CHANNEL, false)
   }
 }
 
-function broadcastStage(stage: GenerationStage): void {
-  for (const window of BrowserWindow.getAllWindows()) window.webContents.send(PROGRESS_CHANNEL, stage)
+function broadcast(channel: string, value: unknown): void {
+  for (const window of BrowserWindow.getAllWindows()) window.webContents.send(channel, value)
 }
+
+const broadcastStage = (stage: GenerationStage): void => broadcast(PROGRESS_CHANNEL, stage)
 
 export function registerLlmIpc(): void {
   handle('llm:generate', (input: { jobDescription: string; instructions: string; ownText?: string; cvOnly?: boolean }) =>

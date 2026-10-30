@@ -27,6 +27,7 @@ function buildApi(): Api {
     )
   }
   groups.llm.onProgress = window.bridge.onProgress
+  groups.llm.onBusy = window.bridge.onBusy
   return groups as unknown as Api
 }
 

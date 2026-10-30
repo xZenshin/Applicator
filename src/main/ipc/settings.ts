@@ -2,7 +2,7 @@ import { BrowserWindow, dialog, type OpenDialogOptions } from 'electron'
 import type { ConnectionResult, SettingsView } from '../../shared/api'
 import { AppError } from '../../shared/errors'
 import type { Settings } from '../../shared/types'
-import { testConnection } from '../connection'
+import { claudeStatus, testConnection } from '../connection'
 import {
   claudeWorkDir,
   getDataDir,
@@ -40,6 +40,8 @@ export function registerSettingsIpc(): void {
       throw e
     }
   })
+
+  handle('settings:claudeStatus', () => claudeStatus(requireClaudeCommand))
 
   handle('settings:pickFile', () =>
     pick({
