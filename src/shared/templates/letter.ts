@@ -3,30 +3,26 @@ import { LETTER_CSS } from './base-css'
 import { htmlDocument } from './document'
 import { escapeHtml as e } from './escape'
 import { formatLetterDate } from './format'
+import { renderHeader } from './header'
 
+/** The CV's header, then the date, greeting, body, sign-off and the applicant's name. */
 export function renderLetterHtml(
   profile: Profile,
   letter: ApplicationLetter,
-  opts: { language: string; company: string; date: Date; fontCss?: string }
+  opts: { language: string; date: Date; fontCss?: string }
 ): string {
   const { personal } = profile
-  const sender = [
-    `<strong>${e(personal.fullName)}</strong>`,
-    ...[personal.location, personal.email, personal.phone].filter(Boolean).map(e)
-  ].join('<br>')
-
   const body = [
-    `<div class="sender">${sender}</div>`,
+    renderHeader(personal),
     `<div class="date">${e(formatLetterDate(opts.date, opts.language))}</div>`,
-    opts.company ? `<div class="recipient">${e(opts.company)}</div>` : '',
-    letter.subject ? `<p class="subject">${e(letter.subject)}</p>` : '',
     letter.greeting ? `<p>${e(letter.greeting)}</p>` : '',
     ...letter.paragraphs.map((p) => `<p>${e(p)}</p>`),
-    `<p class="signoff">${e(letter.signOff)}<br>${e(personal.fullName)}</p>`
+    letter.signOff ? `<p>${e(letter.signOff)}</p>` : '',
+    personal.fullName.trim() ? `<p>${e(personal.fullName.trim())}</p>` : ''
   ]
 
   return htmlDocument({
-    title: letter.subject || 'Application',
+    title: ['Application', personal.fullName.trim()].filter(Boolean).join(' – '),
     language: opts.language,
     bodyClass: 'letter',
     body: body.filter(Boolean).join('\n'),

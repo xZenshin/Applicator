@@ -1,7 +1,7 @@
 import type { GenerationStage } from '../shared/api'
 import { AppError } from '../shared/errors'
 import { isProfileUsable } from '../shared/profile-checks'
-import type { ApplicationLetter, ApplicationMeta, CvContent } from '../shared/types'
+import type { ApplicationLetter, ApplicationMeta, CvContent, Highlight } from '../shared/types'
 import { generateApplication, reviseCv, reviseLetter } from './llm/pipeline'
 import type { RunFn } from './llm/run-fn'
 import { createApplication, loadApplication } from './storage/applications'
@@ -54,6 +54,7 @@ export async function runCvRevision(a: {
   id: string
   cv: CvContent
   instruction: string
+  highlight?: Highlight
 }): Promise<{ cv: CvContent; warnings: string[] }> {
   const record = await loadApplication(a.dataDir, a.id)
   return reviseCv({
@@ -63,7 +64,8 @@ export async function runCvRevision(a: {
     job: record.draft.job,
     cv: a.cv,
     instruction: a.instruction,
-    instructions: record.draft.instructions
+    instructions: record.draft.instructions,
+    highlight: a.highlight
   })
 }
 
@@ -74,6 +76,7 @@ export async function runLetterRevision(a: {
   cv: CvContent
   letter: ApplicationLetter
   instruction: string
+  highlight?: Highlight
 }): Promise<ApplicationLetter> {
   const record = await loadApplication(a.dataDir, a.id)
   return reviseLetter({
@@ -85,6 +88,7 @@ export async function runLetterRevision(a: {
     cv: a.cv,
     letter: a.letter,
     instruction: a.instruction,
-    instructions: record.draft.instructions
+    instructions: record.draft.instructions,
+    highlight: a.highlight
   })
 }

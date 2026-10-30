@@ -85,6 +85,45 @@ describe('revisions', () => {
     expect(out).toEqual(shorter)
     expect(calls[0].input).toContain('Make it shorter')
   })
+
+  it('both revisions pass the highlighted passage to Claude', async () => {
+    const highlight = { text: 'HIGHLIGHTED', before: 'BEFORE ', after: ' AFTER' }
+    const { run, calls } = fakeRun({ [CV_REVISE_SYSTEM]: sampleCv(), [LETTER_REVISE_SYSTEM]: sampleLetter() })
+    await reviseCv({ run, profile: sampleProfile(), jobDescription: JOB_TEXT, job: sampleJob(), cv: sampleCv(), instruction: 'x', highlight })
+    await reviseLetter({
+      run,
+      profile: sampleProfile(),
+      style: sampleStyle(),
+      jobDescription: JOB_TEXT,
+      job: sampleJob(),
+      cv: sampleCv(),
+      letter: sampleLetter(),
+      instruction: 'x',
+      highlight
+    })
+    for (const call of calls) expect(call.input).toContain('BEFORE ⟦HIGHLIGHTED⟧ AFTER')
+  })
+
+  it('removes highlight markers that Claude copied into its answer', async () => {
+    const highlight = { text: 'pipelines', before: '', after: '' }
+    const marked = { ...sampleLetter(), paragraphs: ['I built ⟦streaming pipelines⟧.'] }
+    const markedCv = { ...sampleCv(), summary: '⟦Data engineer⟧ with five years.' }
+    const { run } = fakeRun({ [CV_REVISE_SYSTEM]: markedCv, [LETTER_REVISE_SYSTEM]: marked })
+    const cv = await reviseCv({ run, profile: sampleProfile(), jobDescription: JOB_TEXT, job: sampleJob(), cv: sampleCv(), instruction: 'x', highlight })
+    const letter = await reviseLetter({
+      run,
+      profile: sampleProfile(),
+      style: sampleStyle(),
+      jobDescription: JOB_TEXT,
+      job: sampleJob(),
+      cv: sampleCv(),
+      letter: sampleLetter(),
+      instruction: 'x',
+      highlight
+    })
+    expect(letter.paragraphs).toEqual(['I built streaming pipelines.'])
+    expect(cv.cv.summary).toBe('Data engineer with five years.')
+  })
 })
 
 describe('makeRunFn', () => {

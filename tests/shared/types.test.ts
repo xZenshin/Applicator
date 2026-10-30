@@ -34,8 +34,11 @@ describe('data shapes', () => {
         projects: [],
         certifications: [],
         labels: { ...current.cv.labels, profile: 'Profile', languages: 'Languages', projects: 'Projects', certifications: 'Certifications' }
-      }
+      },
+      letter: { ...current.letter, subject: 'Application for Data Engineer' }
     }
-    expect(DraftSchema.parse(old)).toEqual(current)
+    const parsed = DraftSchema.parse(old)
+    expect(parsed).toEqual(current)
+    expect(parsed.letter).not.toHaveProperty('subject')
   })
 })

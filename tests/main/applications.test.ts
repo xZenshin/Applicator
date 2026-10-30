@@ -72,11 +72,11 @@ describe('loadApplication / saveDraft / setExported', () => {
   it('saveDraft updates draft and updatedAt', async () => {
     const meta = await create(new Date(2026, 9, 29))
     const draft = sampleDraft()
-    draft.letter.subject = 'Changed subject'
+    draft.letter.greeting = 'Changed greeting'
     const later = new Date(2026, 9, 30)
     const updated = await saveDraft(dataDir, meta.id, draft, later)
     expect(updated.updatedAt).toBe(later.toISOString())
-    expect((await loadApplication(dataDir, meta.id)).draft.letter.subject).toBe('Changed subject')
+    expect((await loadApplication(dataDir, meta.id)).draft.letter.greeting).toBe('Changed greeting')
   })
 
   it('setExported records file names and time', async () => {

@@ -5,6 +5,7 @@ import type {
   ApplicationRecord,
   CvContent,
   Draft,
+  Highlight,
   LocateResult,
   Profile,
   Settings,
@@ -49,12 +50,19 @@ export interface Api {
   }
   llm: {
     generate(i: { jobDescription: string; instructions: string }): Promise<ApplicationMeta>
-    reviseCv(i: { id: string; cv: CvContent; instruction: string }): Promise<{ cv: CvContent; warnings: string[] }>
+    /** With a highlight, the instruction applies to that passage only. */
+    reviseCv(i: {
+      id: string
+      cv: CvContent
+      instruction: string
+      highlight?: Highlight
+    }): Promise<{ cv: CvContent; warnings: string[] }>
     reviseLetter(i: {
       id: string
       cv: CvContent
       letter: ApplicationLetter
       instruction: string
+      highlight?: Highlight
     }): Promise<ApplicationLetter>
     cancel(): Promise<void>
     onProgress(cb: (s: GenerationStage) => void): () => void

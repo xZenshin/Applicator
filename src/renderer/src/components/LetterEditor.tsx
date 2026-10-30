@@ -19,7 +19,6 @@ export function LetterEditor(props: {
 
   return (
     <Stack gap="sm">
-      <TextInput disabled={props.disabled} label="Subject" value={letter.subject} onChange={(e) => onChange({ ...letter, subject: e.currentTarget.value })} />
       <TextInput disabled={props.disabled} label="Greeting" value={letter.greeting} onChange={(e) => onChange({ ...letter, greeting: e.currentTarget.value })} />
       <Textarea
         label="Body"

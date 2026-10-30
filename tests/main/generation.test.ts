@@ -118,4 +118,14 @@ describe('revisions', () => {
     expect(calls[0].input).toContain('Keep it under one page.')
     expect(calls[0].input).toContain('Warmer tone')
   })
+
+  it('revisions pass on the highlighted passage', async () => {
+    await seed()
+    const meta = await runGeneration({ run: happy().run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: NOW })
+    const highlight = { text: 'HIGHLIGHTED', before: '', after: '' }
+    const { run, calls } = fakeRun({ [CV_REVISE_SYSTEM]: sampleCv(), [LETTER_REVISE_SYSTEM]: sampleLetter() })
+    await runCvRevision({ run, dataDir, id: meta.id, cv: sampleCv(), instruction: 'x', highlight })
+    await runLetterRevision({ run, dataDir, id: meta.id, cv: sampleCv(), letter: sampleLetter(), instruction: 'x', highlight })
+    for (const call of calls) expect(call.input).toContain('⟦HIGHLIGHTED⟧')
+  })
 })

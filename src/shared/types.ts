@@ -158,12 +158,18 @@ export const JobInfoSchema = z.object({
 export type JobInfo = z.infer<typeof JobInfoSchema>
 
 export const ApplicationLetterSchema = z.object({
-  subject: z.string(),
   greeting: z.string(),
   paragraphs: z.array(z.string()).describe('Body paragraphs only, without greeting or sign-off'),
   signOff: z.string().describe('Closing phrase without the name, e.g. "Kind regards,"')
 })
 export type ApplicationLetter = z.infer<typeof ApplicationLetterSchema>
+
+/** Text the user highlighted for a revision, with some of the text around it so Claude can tell which occurrence is meant. */
+export interface Highlight {
+  text: string
+  before: string
+  after: string
+}
 
 // ---------- Stored applications ----------
 

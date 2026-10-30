@@ -65,7 +65,7 @@ describe('buildLetterInput', () => {
 
 describe('revise inputs', () => {
   it('buildLetterReviseInput includes the current letter and the requested change', () => {
-    const letter = { ...sampleLetter(), subject: 'UNIQUE-SUBJECT' }
+    const letter = { ...sampleLetter(), greeting: 'UNIQUE-GREETING' }
     const input = buildLetterReviseInput({
       profile: sampleProfile(),
       style: sampleStyle(),
@@ -76,7 +76,7 @@ describe('revise inputs', () => {
       instruction: 'Make it shorter'
     })
     expect(input).toContain('## Current letter (JSON)')
-    expect(input).toContain('UNIQUE-SUBJECT')
+    expect(input).toContain('UNIQUE-GREETING')
     expect(input).toContain('## Requested change\nMake it shorter')
   })
 
@@ -92,6 +92,44 @@ describe('revise inputs', () => {
     expect(input).toContain('## Current CV (JSON)')
     expect(input).toContain('UNIQUE-SUMMARY')
     expect(input).toContain('## Requested change\nAdd the SQL skill')
+  })
+
+  const highlight = { text: 'streaming pipelines', before: 'Built batch and ', after: ' in Python' }
+
+  it('mark the highlighted passage in its context, before the requested change', () => {
+    const letterInput = buildLetterReviseInput({
+      profile: sampleProfile(),
+      style: sampleStyle(),
+      jobDescription: JOB_TEXT,
+      job: sampleJob(),
+      cv: sampleCv(),
+      letter: sampleLetter(),
+      instruction: 'Mention Kafka',
+      highlight
+    })
+    const cvInput = buildCvReviseInput({
+      profile: sampleProfile(),
+      jobDescription: JOB_TEXT,
+      job: sampleJob(),
+      cv: sampleCv(),
+      instruction: 'Mention Kafka',
+      highlight
+    })
+    for (const input of [letterInput, cvInput]) {
+      expect(input).toContain('## Highlighted passage\nBuilt batch and ⟦streaming pipelines⟧ in Python')
+      expect(input.indexOf('## Highlighted passage')).toBeLessThan(input.indexOf('## Requested change'))
+    }
+  })
+
+  it('leave out the highlight section when nothing is highlighted', () => {
+    const input = buildCvReviseInput({
+      profile: sampleProfile(),
+      jobDescription: JOB_TEXT,
+      job: sampleJob(),
+      cv: sampleCv(),
+      instruction: 'Shorter'
+    })
+    expect(input).not.toContain('Highlighted passage')
   })
 })
 
@@ -113,6 +151,15 @@ describe('revise system prompts', () => {
     expect(LETTER_REVISE_SYSTEM).toMatch(/never over rule 3/i)
     expect(CV_REVISE_SYSTEM).toMatch(/requested change takes priority/i)
   })
+
+  it('limit a change to the highlighted passage, marked with ⟦ and ⟧', async () => {
+    const { LETTER_REVISE_SYSTEM, CV_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    for (const prompt of [LETTER_REVISE_SYSTEM, CV_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/highlighted passage/i)
+      expect(prompt).toContain('⟦')
+      expect(prompt).toContain('⟧')
+    }
+  })
 })
 
 describe('CV prompts', () => {
@@ -121,6 +168,17 @@ describe('CV prompts', () => {
     for (const prompt of [TAILOR_SYSTEM, CV_REVISE_SYSTEM]) {
       expect(prompt).not.toMatch(/headline|language names|links/i)
       expect(prompt).toMatch(/summary: 2-4 sentences/)
+    }
+  })
+})
+
+describe('letter prompts', () => {
+  it('ask for greeting, paragraphs and sign-off, but no subject line', async () => {
+    const { LETTER_SYSTEM, LETTER_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    for (const prompt of [LETTER_SYSTEM, LETTER_REVISE_SYSTEM]) {
+      expect(prompt).not.toMatch(/subject/i)
+      expect(prompt).toMatch(/greeting:/)
+      expect(prompt).toMatch(/signOff:/)
     }
   })
 })

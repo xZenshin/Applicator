@@ -4,6 +4,7 @@ import {
   CvContentSchema,
   type ApplicationLetter,
   type CvContent,
+  type Highlight,
   type JobInfo,
   type Profile,
   type Style
@@ -46,6 +47,11 @@ export async function generateApplication(a: {
   return { job, cv, letter, warnings }
 }
 
+/** The prompt marks a highlighted passage with ⟦ ⟧; Claude is told not to copy them, but if it does they must not reach the documents. */
+function withoutHighlightMarks<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value).replace(/[⟦⟧]/g, ''))
+}
+
 export async function reviseCv(a: {
   run: RunFn
   profile: Profile
@@ -54,12 +60,13 @@ export async function reviseCv(a: {
   cv: CvContent
   instruction: string
   instructions?: string
+  highlight?: Highlight
 }): Promise<{ cv: CvContent; warnings: string[] }> {
   const revised = await a.run({ system: CV_REVISE_SYSTEM, input: buildCvReviseInput(a), schema: CvContentSchema })
-  return sanitizeCv(a.profile, revised)
+  return sanitizeCv(a.profile, withoutHighlightMarks(revised))
 }
 
-export function reviseLetter(a: {
+export async function reviseLetter(a: {
   run: RunFn
   profile: Profile
   style: Style
@@ -69,6 +76,8 @@ export function reviseLetter(a: {
   letter: ApplicationLetter
   instruction: string
   instructions?: string
+  highlight?: Highlight
 }): Promise<ApplicationLetter> {
-  return a.run({ system: LETTER_REVISE_SYSTEM, input: buildLetterReviseInput(a), schema: ApplicationLetterSchema })
+  const revised = await a.run({ system: LETTER_REVISE_SYSTEM, input: buildLetterReviseInput(a), schema: ApplicationLetterSchema })
+  return withoutHighlightMarks(revised)
 }

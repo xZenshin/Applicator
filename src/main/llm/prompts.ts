@@ -1,5 +1,5 @@
 import { countWords } from '../../shared/text'
-import type { ApplicationLetter, CvContent, JobInfo, Profile, Style } from '../../shared/types'
+import type { ApplicationLetter, CvContent, Highlight, JobInfo, Profile, Style } from '../../shared/types'
 
 const CV_RULES = `Rules:
 1. Use only information from the candidate profile. Never add skills, tools, employers, numbers, achievements or responsibilities that are not in the profile. If the posting asks for something the candidate lacks, leave it out.
@@ -16,8 +16,11 @@ const LETTER_RULES = `Rules:
 2. Match the candidate's own writing: mirror the samples' tone, formality, sentence length, structure, number of paragraphs, and their greeting and sign-off conventions. Aim for the target length. Never copy sentences from the samples; write new text in the same voice. If there are no samples, write in a warm, professional and concrete style.
 3. Use only facts found in the profile or the tailored CV. Never invent experience, skills, numbers or achievements, and never state details about the company that the posting does not give.
 4. Connect the candidate's most relevant experience to the posting's key requirements with specific examples rather than generic claims.
-5. subject: a short subject line in the posting's language (e.g. "Application for the position as Data Engineer"). greeting: the salutation line; use the contact person's name if the posting gives one. paragraphs: the body only, without greeting or sign-off. signOff: the closing phrase only (e.g. "Kind regards,"), without the candidate's name, which is added afterwards.
+5. greeting: the salutation line; use the contact person's name if the posting gives one. paragraphs: the body only, without greeting or sign-off. signOff: the closing phrase only (e.g. "Kind regards,"), without the candidate's name, which is added afterwards.
 6. Follow the default instructions and the instructions for this application unless they conflict with these rules.`
+
+const highlightRule = (document: string): string =>
+  `If a highlighted passage is given, it is shown with some of the text around it, and the passage itself is marked with ⟦ and ⟧. The requested change then applies to that passage only: rewrite it as asked and keep the rest of the ${document} word for word, apart from small adjustments to the text right next to it where they are needed for the result to read naturally. Never put ⟦ or ⟧ in your answer.`
 
 export const TAILOR_SYSTEM = `You tailor a candidate's CV to one specific job posting. You receive the job posting and the candidate's profile as JSON, where every item has an id such as "exp_01" or "skill_03".
 
@@ -29,7 +32,9 @@ export const CV_REVISE_SYSTEM = `You revise a CV that was already tailored to a 
 
 ${CV_RULES}
 
-Apply the requested change and keep everything else as it is. The requested change takes priority over rule 2 (which items to select) and rule 5 (lengths), but never over rule 1: do not add facts that are not in the profile. You may add items from the profile if the change calls for it. Return the complete revised CV.`
+Apply the requested change and keep everything else as it is. The requested change takes priority over rule 2 (which items to select) and rule 5 (lengths), but never over rule 1: do not add facts that are not in the profile. You may add items from the profile if the change calls for it. Return the complete revised CV.
+
+${highlightRule('CV')}`
 
 export const LETTER_SYSTEM = `You write a job application letter for a candidate. You receive the job posting, an analysis of it, the candidate's full profile, a CV already tailored to this job, applications the candidate wrote themselves, a target length, and instructions.
 
@@ -39,7 +44,9 @@ export const LETTER_REVISE_SYSTEM = `You revise a job application letter. You re
 
 ${LETTER_RULES}
 
-Apply the requested change and keep everything else as it is. The requested change takes priority over the target length and the writing samples, but never over rule 3: do not add facts that are not in the profile or the tailored CV. Return the complete revised letter.`
+Apply the requested change and keep everything else as it is. The requested change takes priority over the target length and the writing samples, but never over rule 3: do not add facts that are not in the profile or the tailored CV. Return the complete revised letter.
+
+${highlightRule('letter')}`
 
 const DEFAULT_TARGET_WORDS = 350
 
@@ -53,6 +60,10 @@ export function targetWordCount(style: Style): number {
 
 const section = (title: string, body: string): string => `## ${title}\n${body.trim() || '(none)'}`
 const json = (value: unknown): string => JSON.stringify(value, null, 2)
+
+/** The highlighted passage in its context, marked as described in highlightRule. */
+const highlightSections = (highlight?: Highlight): string[] =>
+  highlight ? [section('Highlighted passage', `${highlight.before}⟦${highlight.text}⟧${highlight.after}`)] : []
 
 function profileForPrompt(profile: Profile): Omit<Profile, 'version' | 'nextIds'> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -75,6 +86,7 @@ export function buildCvReviseInput(a: {
   cv: CvContent
   instruction: string
   instructions?: string
+  highlight?: Highlight
 }): string {
   return [
     section('Job posting', a.jobDescription),
@@ -82,6 +94,7 @@ export function buildCvReviseInput(a: {
     section('Candidate profile (JSON)', json(profileForPrompt(a.profile))),
     section('Extra instructions', a.instructions ?? ''),
     section('Current CV (JSON)', json(a.cv)),
+    ...highlightSections(a.highlight),
     section('Requested change', a.instruction)
   ].join('\n\n')
 }
@@ -130,10 +143,12 @@ export function buildLetterReviseInput(a: {
   letter: ApplicationLetter
   instruction: string
   instructions?: string
+  highlight?: Highlight
 }): string {
   return [
     ...letterSections({ ...a, instructions: a.instructions ?? '' }),
     section('Current letter (JSON)', json(a.letter)),
+    ...highlightSections(a.highlight),
     section('Requested change', a.instruction)
   ].join('\n\n')
 }

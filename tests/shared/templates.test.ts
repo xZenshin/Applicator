@@ -115,18 +115,21 @@ describe('renderCvHtml', () => {
     expect(html).toContain('<h1>Jane<br>Skou-Doe</h1>')
     expect(html).toContain('<h2>Technical Skills</h2>')
     expect(html).toContain('<strong>R&amp;D engineer</strong>')
-    expect(html).toMatch(/h1, h2, \.entry-title strong \{ font-family: 'Cabin Small Caps'/)
+    expect(html).toMatch(/h1 \{ font-family: 'Cabin Small Caps'/)
+    expect(html).toMatch(/h2, \.entry-title strong \{ font-family: 'Cabin Small Caps'/)
     expect(html).not.toContain('font-variant')
     expect(html).not.toContain('class="sc"')
   })
 
-  it('uses Cabin, while the letter keeps Source Sans 3', () => {
+  it('sets the CV in 10pt Cabin and the letter in 11pt Cabin', () => {
     const cv = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
-    const letter = renderLetterHtml(sampleProfile(), sampleLetter(), { language: 'en', company: '', date: new Date() })
-    expect(cv).toContain("font-family: 'Cabin'")
-    expect(cv).not.toContain('Source Sans 3')
-    expect(letter).toContain("font-family: 'Source Sans 3'")
-    expect(letter).not.toContain('Cabin')
+    const letter = renderLetterHtml(sampleProfile(), sampleLetter(), { language: 'en', date: new Date() })
+    for (const html of [cv, letter]) {
+      expect(html).toContain("font-family: 'Cabin'")
+      expect(html).not.toContain('Source Sans 3')
+    }
+    expect(cv).toMatch(/body \{[^}]*font-size: 10pt/)
+    expect(letter).toMatch(/body \{[^}]*font-size: 11pt/)
   })
 })
 
@@ -151,17 +154,39 @@ describe('format', () => {
 })
 
 describe('renderLetterHtml', () => {
-  it('renders localized date, paragraphs and signature', () => {
-    const letter = sampleLetter()
-    const html = renderLetterHtml(sampleProfile(), letter, { language: 'da', company: 'Acme', date: new Date(2026, 9, 29) })
-    expect(html).toContain('29. oktober 2026')
+  const render = (letter = sampleLetter()): string =>
+    renderLetterHtml(sampleProfile(), letter, { language: 'da', date: new Date(2026, 9, 29) })
+  /** Everything after the header, one element per line. */
+  const afterHeader = (html: string): string[] =>
+    html.slice(html.indexOf('</header>') + '</header>'.length, html.indexOf('</body>')).trim().split('\n')
+
+  it('starts with the same name-and-contact header as the CV', () => {
+    const header = (html: string): string | undefined => /<header>.*?<\/header>/s.exec(html)?.[0]
+    expect(header(render())).toContain('jane@example.com')
+    expect(header(render())).toBe(header(renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })))
+  })
+
+  it('follows the header with the localized date, greeting, paragraphs, sign-off and name', () => {
+    const html = render()
     expect(html).toContain('<html lang="da">')
-    expect(html).toContain(escapeHtml(letter.subject))
-    for (const p of letter.paragraphs) expect(html).toContain(`<p>${escapeHtml(p)}</p>`)
-    const signOffAt = html.indexOf('Kind regards,')
-    expect(signOffAt).toBeGreaterThan(-1)
-    expect(html.indexOf('Jane Doe', signOffAt)).toBeGreaterThan(signOffAt)
-    expect(html).toContain('Acme')
+    expect(afterHeader(html)).toEqual([
+      '<div class="date">29. oktober 2026</div>',
+      '<p>Dear Hiring Manager,</p>',
+      '<p>I am applying for the Data Engineer position at Acme.</p>',
+      '<p>At Ørsted I built batch and streaming pipelines in Python.</p>',
+      '<p>I would welcome the chance to discuss how I can help your team.</p>',
+      '<p>Kind regards,</p>',
+      '<p>Jane Doe</p>'
+    ])
+  })
+
+  it('leaves out an empty greeting or sign-off and escapes HTML', () => {
+    const html = render({ ...sampleLetter(), greeting: '', signOff: '', paragraphs: ['<b>A & B</b>'] })
+    expect(afterHeader(html)).toEqual([
+      '<div class="date">29. oktober 2026</div>',
+      '<p>&lt;b&gt;A &amp; B&lt;/b&gt;</p>',
+      '<p>Jane Doe</p>'
+    ])
   })
 })
 

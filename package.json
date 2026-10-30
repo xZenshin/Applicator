@@ -23,7 +23,6 @@
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
     "@fontsource/cabin": "^5.3.0",
-    "@fontsource/source-sans-3": "^5.3.1",
     "@mantine/core": "^9.7.4",
     "@mantine/hooks": "^9.7.4",
     "@mantine/notifications": "^9.7.4",

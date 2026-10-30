@@ -1,7 +1,7 @@
 import { BrowserWindow } from 'electron'
 import { PROGRESS_CHANNEL, type GenerationStage } from '../../shared/api'
 import { AppError } from '../../shared/errors'
-import type { ApplicationLetter, CvContent } from '../../shared/types'
+import type { ApplicationLetter, CvContent, Highlight } from '../../shared/types'
 import { CLAUDE_MESSAGES, ClaudeError } from '../claude/errors'
 import { assertSubscriptionAuth } from '../connection'
 import { getDataDir, makeAppRunFn, requireClaudeCommand } from '../context'
@@ -49,12 +49,14 @@ export function registerLlmIpc(): void {
     )
   )
 
-  handle('llm:reviseCv', (input: { id: string; cv: CvContent; instruction: string }) =>
+  handle('llm:reviseCv', (input: { id: string; cv: CvContent; instruction: string; highlight?: Highlight }) =>
     withClaude(async (run) => runCvRevision({ run, dataDir: await getDataDir(), ...input }))
   )
 
-  handle('llm:reviseLetter', (input: { id: string; cv: CvContent; letter: ApplicationLetter; instruction: string }) =>
-    withClaude(async (run) => runLetterRevision({ run, dataDir: await getDataDir(), ...input }))
+  handle(
+    'llm:reviseLetter',
+    (input: { id: string; cv: CvContent; letter: ApplicationLetter; instruction: string; highlight?: Highlight }) =>
+      withClaude(async (run) => runLetterRevision({ run, dataDir: await getDataDir(), ...input }))
   )
 
   handle('llm:cancel', async () => {

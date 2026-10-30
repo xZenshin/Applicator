@@ -116,7 +116,6 @@ export function sampleCv(): CvContent {
 
 export function sampleLetter(): ApplicationLetter {
   return ApplicationLetterSchema.parse({
-    subject: 'Application for Data Engineer',
     greeting: 'Dear Hiring Manager,',
     paragraphs: [
       'I am applying for the Data Engineer position at Acme.',

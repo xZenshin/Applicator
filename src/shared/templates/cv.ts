@@ -3,19 +3,9 @@ import { CV_CSS } from './base-css'
 import { htmlDocument } from './document'
 import { escapeHtml as e } from './escape'
 import { formatYearRange } from './format'
-import { safeHref } from './url'
+import { renderHeader } from './header'
 
 const join = (parts: string[], sep: string): string => parts.filter(Boolean).join(sep)
-function anchor(url: string, text: string): string {
-  const href = safeHref(url)
-  return href ? `<a href="${e(href)}">${e(text)}</a>` : e(text)
-}
-
-/** "Anna Marie Jensen" → "Anna Marie<br>Jensen": the last name gets its own line. */
-function nameLines(fullName: string): string {
-  const m = /^(.*\S)\s+(\S+)$/.exec(fullName.trim())
-  return m ? `${e(m[1])}<br>${e(m[2])}` : e(fullName.trim())
-}
 
 /** A single line reads as a paragraph; several become a bulleted list. */
 function text(lines: string[]): string {
@@ -76,15 +66,7 @@ function sectionBody(section: SectionKey, profile: Profile, cv: CvContent): stri
 
 export function renderCvHtml(profile: Profile, cv: CvContent, opts: { language: string; fontCss?: string }): string {
   const { personal } = profile
-  const links = personal.links
-    .filter((l) => l.url || l.label)
-    .map((l) => anchor(l.url, l.label || l.url))
-  const contact = join([e(personal.location), e(personal.phone), e(personal.email), ...links], ' | ')
-
-  const parts = [
-    `<header><h1>${nameLines(personal.fullName)}</h1>${contact ? `<div class="contact">${contact}</div>` : ''}</header>`,
-    cv.summary ? `<section class="intro"><p>${e(cv.summary)}</p></section>` : ''
-  ]
+  const parts = [renderHeader(personal), cv.summary ? `<section class="intro"><p>${e(cv.summary)}</p></section>` : '']
   for (const section of SECTION_KEYS) {
     const body = cv[section].length ? sectionBody(section, profile, cv) : ''
     if (body) parts.push(`<section><h2>${e(cv.labels[section])}</h2>${body}</section>`)
