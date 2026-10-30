@@ -68,7 +68,9 @@ npm test             # unit tests (Vitest)
 npm run typecheck
 ```
 
-A live smoke test against the real CLI is skipped by default. Run it with `$env:LIVE_CLI = '1'; npx vitest run tests/main/live-cli.test.ts` (optionally set `LIVE_MODEL`).
+GitHub Actions ([.github/workflows/tests.yml](.github/workflows/tests.yml)) runs the typecheck and the tests on Windows for every pull request into `main` and every published release. You can also start it by hand from the repository's **Actions** tab.
+
+A live smoke test against the real CLI is skipped by default (also in GitHub Actions). Run it with `$env:LIVE_CLI = '1'; npx vitest run tests/main/live-cli.test.ts` (optionally set `LIVE_MODEL`).
 
 The CV's small-caps headings use "Cabin Small Caps", a font generated from Cabin by `scripts/make-small-caps-font.py` (needs Python with `pip install fonttools brotli`). The generated fonts are committed in `src/shared/templates/font-files`, so you only need to run it again if Cabin is updated.
 
