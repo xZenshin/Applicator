@@ -5,14 +5,21 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ClaudeError } from '../../src/main/claude/errors'
 import { runCvRevision, runGeneration, runLetterRevision } from '../../src/main/generation'
-import { CV_REVISE_SYSTEM, LETTER_REVISE_SYSTEM, LETTER_SYSTEM, TAILOR_SYSTEM } from '../../src/main/llm/prompts'
+import {
+  CV_ONLY_REVISE_SYSTEM,
+  CV_ONLY_TAILOR_SYSTEM,
+  CV_REVISE_SYSTEM,
+  LETTER_REVISE_SYSTEM,
+  LETTER_SYSTEM,
+  TAILOR_SYSTEM
+} from '../../src/main/llm/prompts'
 import type { RunFn } from '../../src/main/llm/run-fn'
 import { loadApplication } from '../../src/main/storage/applications'
 import { saveProfile } from '../../src/main/storage/profile'
 import { saveStyle } from '../../src/main/storage/style'
 import { isProfileUsable } from '../../src/shared/profile-checks'
 import { emptyProfile } from '../../src/shared/types'
-import { sampleCv, sampleJob, sampleLetter, sampleProfile, sampleStyle } from '../fixtures/sample-data'
+import { SAMPLE_120_WORDS, sampleCv, sampleJob, sampleLetter, sampleProfile, sampleStyle } from '../fixtures/sample-data'
 
 const JOB_TEXT = 'Acme is hiring a Data Engineer. You know Python and SQL and like building pipelines.'
 const NOW = new Date(2026, 9, 29, 10, 0)
@@ -63,6 +70,29 @@ describe('runGeneration', () => {
     expect(record.draft.instructions).toBe('Mention relocation.')
     expect(record.draft.untranslatedIds).toEqual([])
     expect(record.jobDescription).toBe(JOB_TEXT)
+  })
+
+  it("saves the candidate's own text and gives it to the letter, not the CV", async () => {
+    await seed()
+    const { run, calls } = happy()
+    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', ownText: 'OWN-TEXT', onStage: () => {}, now: NOW })
+    expect((await loadApplication(dataDir, meta.id)).draft.ownText).toBe('OWN-TEXT')
+    expect(calls.map((c) => c.system)).toEqual([TAILOR_SYSTEM, LETTER_SYSTEM])
+    expect(calls[0].input).not.toContain('OWN-TEXT')
+    expect(calls[1].input).toContain('OWN-TEXT')
+  })
+
+  it('saves a CV-only application without a letter', async () => {
+    await seed()
+    const { run, calls } = fakeRun({ [CV_ONLY_TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() } })
+    const stages: string[] = []
+    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', ownText: 'OWN-TEXT', cvOnly: true, onStage: (s) => stages.push(s), now: NOW })
+    const record = await loadApplication(dataDir, meta.id)
+    expect(record.draft.letter).toBeNull()
+    expect(record.draft.cv).toEqual(sampleCv())
+    expect(record.draft.ownText).toBe('OWN-TEXT')
+    expect(calls).toHaveLength(1)
+    expect(stages).toEqual(['tailoring'])
   })
 
   it('leaves no application folder when the letter call fails', async () => {
@@ -117,6 +147,34 @@ describe('revisions', () => {
     expect(calls[0].input).toContain('Mention relocation.')
     expect(calls[0].input).toContain('Keep it under one page.')
     expect(calls[0].input).toContain('Warmer tone')
+  })
+
+  it("runLetterRevision passes on the candidate's own text", async () => {
+    await seed()
+    const meta = await runGeneration({ run: happy().run, dataDir, jobDescription: JOB_TEXT, instructions: '', ownText: 'OWN-TEXT', onStage: () => {}, now: NOW })
+    const { run, calls } = fakeRun({ [LETTER_REVISE_SYSTEM]: sampleLetter() })
+    await runLetterRevision({ run, dataDir, id: meta.id, cv: sampleCv(), letter: sampleLetter(), instruction: 'Rewrite it all' })
+    expect(calls[0].input).toContain('OWN-TEXT')
+  })
+
+  it('runCvRevision of a CV-only application keeps the motivated summary, the samples and the own text', async () => {
+    await seed()
+    const generate = fakeRun({ [CV_ONLY_TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() } })
+    const meta = await runGeneration({ run: generate.run, dataDir, jobDescription: JOB_TEXT, instructions: '', ownText: 'OWN-TEXT', cvOnly: true, onStage: () => {}, now: NOW })
+    const { run, calls } = fakeRun({ [CV_ONLY_REVISE_SYSTEM]: sampleCv() })
+    await runCvRevision({ run, dataDir, id: meta.id, cv: sampleCv(), instruction: 'Shorter' })
+    expect(calls.map((c) => c.system)).toEqual([CV_ONLY_REVISE_SYSTEM])
+    expect(calls[0].input).toContain(SAMPLE_120_WORDS)
+    expect(calls[0].input).toContain('OWN-TEXT')
+  })
+
+  it('runCvRevision of an application with a letter keeps the usual prompt', async () => {
+    await seed()
+    const meta = await runGeneration({ run: happy().run, dataDir, jobDescription: JOB_TEXT, instructions: '', ownText: 'OWN-TEXT', onStage: () => {}, now: NOW })
+    const { run, calls } = fakeRun({ [CV_REVISE_SYSTEM]: sampleCv() })
+    await runCvRevision({ run, dataDir, id: meta.id, cv: sampleCv(), instruction: 'Shorter' })
+    expect(calls.map((c) => c.system)).toEqual([CV_REVISE_SYSTEM])
+    expect(calls[0].input).not.toContain('OWN-TEXT')
   })
 
   it('revisions pass on the highlighted passage', async () => {

@@ -3,7 +3,14 @@ import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ClaudeError } from '../../src/main/claude/errors'
 import { generateApplication, reviseCv, reviseLetter } from '../../src/main/llm/pipeline'
-import { CV_REVISE_SYSTEM, LETTER_REVISE_SYSTEM, LETTER_SYSTEM, TAILOR_SYSTEM } from '../../src/main/llm/prompts'
+import {
+  CV_ONLY_REVISE_SYSTEM,
+  CV_ONLY_TAILOR_SYSTEM,
+  CV_REVISE_SYSTEM,
+  LETTER_REVISE_SYSTEM,
+  LETTER_SYSTEM,
+  TAILOR_SYSTEM
+} from '../../src/main/llm/prompts'
 import { makeRunFn, type RunFn } from '../../src/main/llm/run-fn'
 import { ApplicationLetterSchema } from '../../src/shared/types'
 import type { GenerationStage } from '../../src/shared/api'
@@ -49,6 +56,26 @@ describe('generateApplication', () => {
     expect(calls[1].input).toContain('"language": "en"')
   })
 
+  it('tailors a CV-only application with the motivated-summary prompt and writes no letter', async () => {
+    const { run, calls } = fakeRun({ [CV_ONLY_TAILOR_SYSTEM]: tailorResponse() })
+    const stages: GenerationStage[] = []
+    const out = await generateApplication({
+      run,
+      profile: sampleProfile(),
+      style: sampleStyle(),
+      jobDescription: JOB_TEXT,
+      instructions: '',
+      ownText: 'OWN-TEXT',
+      cvOnly: true,
+      onStage: (s) => stages.push(s)
+    })
+    expect(calls.map((c) => c.system)).toEqual([CV_ONLY_TAILOR_SYSTEM])
+    expect(calls[0].input).toContain('OWN-TEXT')
+    expect(stages).toEqual(['tailoring'])
+    expect(out.letter).toBeNull()
+    expect(out.cv.experience.map((e) => e.id)).toEqual(['exp_01'])
+  })
+
   it('returns sanitized cv and normalized language', async () => {
     const { run } = fakeRun({ [TAILOR_SYSTEM]: tailorResponse(), [LETTER_SYSTEM]: sampleLetter() })
     const out = await generateApplication({ run, profile: sampleProfile(), style: sampleStyle(), jobDescription: JOB_TEXT, instructions: '', onStage: () => {} })
@@ -67,6 +94,21 @@ describe('revisions', () => {
     expect(out.cv.skills).toEqual([])
     expect(out.warnings.join(' ')).toContain('skill_77')
     expect(calls[0].input).toContain('Add Rust')
+  })
+
+  it('reviseCv keeps the motivated-summary prompt for a CV-only application', async () => {
+    const { run, calls } = fakeRun({ [CV_ONLY_REVISE_SYSTEM]: sampleCv() })
+    await reviseCv({
+      run,
+      profile: sampleProfile(),
+      jobDescription: JOB_TEXT,
+      job: sampleJob(),
+      cv: sampleCv(),
+      instruction: 'Shorter',
+      cvOnly: { style: sampleStyle(), ownText: 'OWN-TEXT' }
+    })
+    expect(calls.map((c) => c.system)).toEqual([CV_ONLY_REVISE_SYSTEM])
+    expect(calls[0].input).toContain('OWN-TEXT')
   })
 
   it('reviseLetter returns the revised letter', async () => {

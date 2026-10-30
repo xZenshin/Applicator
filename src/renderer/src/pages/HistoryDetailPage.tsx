@@ -28,7 +28,7 @@ export default function HistoryDetailPage(): React.JSX.Element {
   const openFile = (fileName: string): void => {
     api.applications.openFile(id, fileName).catch(fail)
   }
-  const letterDate = new Date(meta.exportedAt ?? meta.updatedAt)
+  const letter = letterHtml(profile, draft, new Date(meta.exportedAt ?? meta.updatedAt))
 
   return (
     <Stack maw={1100} gap="md">
@@ -37,6 +37,11 @@ export default function HistoryDetailPage(): React.JSX.Element {
           <Group gap="xs">
             <Title order={2}>{[meta.company, meta.role].filter(Boolean).join(' — ') || meta.id}</Title>
             <Badge variant="light">{meta.language.toUpperCase()}</Badge>
+            {letter === null && (
+              <Badge variant="light" color="gray">
+                CV only
+              </Badge>
+            )}
             {meta.exportedAt ? (
               <Badge color="green" variant="light">
                 Exported
@@ -82,7 +87,7 @@ export default function HistoryDetailPage(): React.JSX.Element {
       <Tabs defaultValue="job" keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="job">Job description</Tabs.Tab>
-          <Tabs.Tab value="letter">Application</Tabs.Tab>
+          {letter !== null && <Tabs.Tab value="letter">Application</Tabs.Tab>}
           <Tabs.Tab value="cv">CV</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="job" pt="md">
@@ -90,9 +95,11 @@ export default function HistoryDetailPage(): React.JSX.Element {
             <Text style={{ whiteSpace: 'pre-wrap' }}>{record.jobDescription}</Text>
           </Card>
         </Tabs.Panel>
-        <Tabs.Panel value="letter" pt="md" maw={820}>
-          <PreviewFrame html={letterHtml(profile, draft, letterDate)} title="Application" />
-        </Tabs.Panel>
+        {letter !== null && (
+          <Tabs.Panel value="letter" pt="md" maw={820}>
+            <PreviewFrame html={letter} title="Application" />
+          </Tabs.Panel>
+        )}
         <Tabs.Panel value="cv" pt="md" maw={820}>
           <PreviewFrame html={cvHtml(profile, draft)} title="CV" />
         </Tabs.Panel>

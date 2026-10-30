@@ -23,7 +23,7 @@ Applicator finds `claude.exe` automatically (on `PATH`, in `%USERPROFILE%\.local
 
 1. **My CV**: enter your personal details, an intro summary and everything you might want on a CV: technical skills, education and experience. A live preview next to the form shows how the CV looks, and **Download PDF** saves it as a PDF wherever you choose. Each item gets a permanent id (`exp_01`, `skill_03`, …) that Claude uses to refer to it.
 2. **Writing style**: paste 2–3 applications you wrote yourself and, optionally, default instructions (e.g. "Keep it under one page").
-3. **New application**: paste the full job posting (plus optional extra instructions) and click **Generate**. This usually takes 1–2 minutes.
+3. **New application**: paste the full job posting and click **Generate**. This usually takes 1–2 minutes. Optionally, paste text you have already written for the letter (a section or an unfinished draft): Claude works it into the letter, polishing the wording to fit the posting. You can also add extra instructions. For jobs that only ask for a CV, choose **CV only**: there is no letter, and the summary at the top of the CV becomes a longer, motivated introduction in your own voice that also says why you want the job.
 4. **Review**: edit the letter and CV next to a live preview, tick or untick CV items, or ask Claude for changes ("Make it shorter"), with one-step Undo. To change just one part, highlight it in the editor or the preview, click **Ask Claude** and say what to do with it ("Put more emphasis on my experience with Python"). Claude rewrites only that passage. Click **Export PDFs** when you're happy.
 5. **History**: browse, search, reopen, or delete earlier applications.
 

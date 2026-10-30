@@ -36,13 +36,15 @@ function broadcastStage(stage: GenerationStage): void {
 }
 
 export function registerLlmIpc(): void {
-  handle('llm:generate', (input: { jobDescription: string; instructions: string }) =>
+  handle('llm:generate', (input: { jobDescription: string; instructions: string; ownText?: string; cvOnly?: boolean }) =>
     withClaude(async (run) =>
       runGeneration({
         run,
         dataDir: await getDataDir(),
         jobDescription: String(input.jobDescription ?? ''),
         instructions: String(input.instructions ?? ''),
+        ownText: String(input.ownText ?? ''),
+        cvOnly: input.cvOnly === true,
         onStage: broadcastStage,
         now: new Date()
       })

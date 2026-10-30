@@ -49,7 +49,11 @@ export interface Api {
     save(s: Style): Promise<void>
   }
   llm: {
-    generate(i: { jobDescription: string; instructions: string }): Promise<ApplicationMeta>
+    /**
+     * ownText: text the user already wrote, which Claude builds the letter on (or, with cvOnly, the CV's summary).
+     * cvOnly: no letter; the CV gets a motivated summary instead.
+     */
+    generate(i: { jobDescription: string; instructions: string; ownText: string; cvOnly: boolean }): Promise<ApplicationMeta>
     /** With a highlight, the instruction applies to that passage only. */
     reviseCv(i: {
       id: string
@@ -71,7 +75,8 @@ export interface Api {
     list(): Promise<ApplicationMeta[]>
     get(id: string): Promise<ApplicationRecord>
     saveDraft(id: string, d: Draft): Promise<ApplicationMeta>
-    exportPdfs(id: string, html: { cv: string; letter: string }): Promise<ApplicationMeta>
+    /** letter is null for a CV-only application. */
+    exportPdfs(id: string, html: { cv: string; letter: string | null }): Promise<ApplicationMeta>
     openFile(id: string, fileName: string): Promise<void>
     showFolder(id: string): Promise<void>
     trash(id: string): Promise<void>

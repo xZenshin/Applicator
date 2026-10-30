@@ -133,6 +133,62 @@ describe('revise inputs', () => {
   })
 })
 
+describe("the candidate's own text", () => {
+  const OWN = 'I have followed Acme since the Aarhus hackathon in 2024.'
+  const letterArgs = {
+    profile: sampleProfile(),
+    style: sampleStyle(),
+    jobDescription: JOB_TEXT,
+    instructions: '',
+    job: sampleJob(),
+    cv: sampleCv()
+  }
+
+  it('is given to Claude in its own section when writing and when revising the letter', () => {
+    const write = buildLetterInput({ ...letterArgs, ownText: OWN })
+    const revise = buildLetterReviseInput({ ...letterArgs, letter: sampleLetter(), instruction: 'Shorter', ownText: OWN })
+    for (const input of [write, revise]) {
+      expect(input).toContain(`## Text the candidate wrote for this application\n${OWN}`)
+    }
+  })
+
+  it('is left out when the candidate wrote nothing', () => {
+    for (const ownText of [undefined, '', ' \n ']) {
+      expect(buildLetterInput({ ...letterArgs, ownText })).not.toContain('Text the candidate wrote')
+    }
+  })
+})
+
+describe('CV-only applications', () => {
+  it('ask for a longer, motivated summary instead of the usual 2-4 sentences', async () => {
+    const { CV_ONLY_TAILOR_SYSTEM, CV_ONLY_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    for (const prompt of [CV_ONLY_TAILOR_SYSTEM, CV_ONLY_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/without an application letter/)
+      expect(prompt).toMatch(/summary: .*6-8 sentences/)
+      expect(prompt).toMatch(/why they want this job at this company/)
+      expect(prompt).not.toMatch(/2-4 sentences/)
+    }
+  })
+
+  it('give Claude the writing samples and the text the candidate wrote, but not the default instructions for letters', () => {
+    const cvOnly = { style: sampleStyle(), ownText: 'OWN-TEXT' }
+    const tailor = buildTailorInput({ profile: sampleProfile(), jobDescription: JOB_TEXT, instructions: '', cvOnly })
+    const revise = buildCvReviseInput({
+      profile: sampleProfile(),
+      jobDescription: JOB_TEXT,
+      job: sampleJob(),
+      cv: sampleCv(),
+      instruction: 'Shorter',
+      cvOnly
+    })
+    for (const input of [tailor, revise]) {
+      expect(input).toContain(SAMPLE_120_WORDS)
+      expect(input).toContain('## Text the candidate wrote for this application\nOWN-TEXT')
+      expect(input).not.toContain('Keep it under one page.')
+    }
+  })
+})
+
 describe('toCliSchema', () => {
   it('has no $schema and describes job and cv', () => {
     const schema = toCliSchema(TailorOutputSchema) as Record<string, unknown> & {
@@ -180,5 +236,14 @@ describe('letter prompts', () => {
       expect(prompt).toMatch(/greeting:/)
       expect(prompt).toMatch(/signOff:/)
     }
+  })
+
+  it("build the letter on the candidate's own text and accept the facts in it", async () => {
+    const { LETTER_SYSTEM, LETTER_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    for (const prompt of [LETTER_SYSTEM, LETTER_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/text the candidate wrote for this application/i)
+      expect(prompt).toMatch(/use only facts found in the profile, the tailored CV or the text the candidate wrote/i)
+    }
+    expect(LETTER_REVISE_SYSTEM).toMatch(/requested change takes priority over the target length, the writing samples and the text the candidate wrote/i)
   })
 })

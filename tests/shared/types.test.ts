@@ -41,4 +41,10 @@ describe('data shapes', () => {
     expect(parsed).toEqual(current)
     expect(parsed.letter).not.toHaveProperty('subject')
   })
+
+  it("reads a draft saved before the candidate's own text was stored", () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { ownText, ...old } = { ...sampleDraft(), ownText: 'x' }
+    expect(DraftSchema.parse(old).ownText).toBe('')
+  })
 })

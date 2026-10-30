@@ -55,7 +55,7 @@ export default function ReviewPage(): React.JSX.Element {
     )
   }, [id])
 
-  const letterPreview = useMemo(() => (record && draft ? letterHtml(record.profile, draft) : ''), [record, draft])
+  const letterPreview = useMemo(() => (record && draft ? letterHtml(record.profile, draft) : null), [record, draft])
   const cvPreview = useMemo(() => (record && draft ? cvHtml(record.profile, draft) : ''), [record, draft])
 
   if (loadError) return <Alert color="red" title="Could not open this application">{loadError}</Alert>
@@ -82,9 +82,11 @@ export default function ReviewPage(): React.JSX.Element {
             <Button size="compact-xs" variant="light" onClick={() => openFile(m.cvPdf)}>
               Open CV
             </Button>
-            <Button size="compact-xs" variant="light" onClick={() => openFile(m.letterPdf)}>
-              Open application
-            </Button>
+            {m.letterPdf && (
+              <Button size="compact-xs" variant="light" onClick={() => openFile(m.letterPdf)}>
+                Open application
+              </Button>
+            )}
           </Group>
         )
       })
@@ -109,7 +111,8 @@ export default function ReviewPage(): React.JSX.Element {
 
   const reviseLetter = whileRevising('letter', async (instruction, highlight) => {
     const previous = draft.letter
-    const letter = await api.llm.reviseLetter({ id, cv: draft.cv, letter: draft.letter, instruction, highlight })
+    if (!previous) return
+    const letter = await api.llm.reviseLetter({ id, cv: draft.cv, letter: previous, instruction, highlight })
     setUndo((u) => ({ ...u, letter: previous }))
     update((d) => ({ ...d, letter }))
     replaced()
@@ -177,6 +180,11 @@ export default function ReviewPage(): React.JSX.Element {
           <Group gap="xs">
             <Title order={2}>{[draft.job.company, draft.job.role].filter(Boolean).join(' — ') || meta.id}</Title>
             <Badge variant="light">{draft.job.language.toUpperCase()}</Badge>
+            {!draft.letter && (
+              <Badge variant="light" color="gray">
+                CV only
+              </Badge>
+            )}
           </Group>
           <AutosaveIndicator status={autosave.status} error={autosave.error} />
           <Group gap="sm" align="flex-end" mt="xs">
@@ -236,30 +244,32 @@ export default function ReviewPage(): React.JSX.Element {
       )}
 
       <Tabs
-        defaultValue="letter"
+        defaultValue={draft.letter ? 'letter' : 'cv'}
         keepMounted={false}
         onChange={() => {
           if (!revising) closeHighlight()
         }}
       >
         <Tabs.List>
-          <Tabs.Tab value="letter">Application</Tabs.Tab>
+          {draft.letter && <Tabs.Tab value="letter">Application</Tabs.Tab>}
           <Tabs.Tab value="cv">CV</Tabs.Tab>
         </Tabs.List>
 
-        <Tabs.Panel value="letter" pt="md">
-          <Grid gap="lg">
-            <Grid.Col span={5}>
-              <Stack>
-                <RevisePanel onRevise={reviseLetter} canUndo={!!undo.letter} onUndo={undoLetter} busy={revising !== null} />
-                <Box onMouseUp={fieldHighlight('letter')} onKeyUp={fieldHighlight('letter')}>
-                  <LetterEditor letter={draft.letter} resetKey={resetKey} disabled={revising === 'letter'} onChange={(letter) => update((d) => ({ ...d, letter }))} />
-                </Box>
-              </Stack>
-            </Grid.Col>
-            <Grid.Col span={7}>{preview(letterPreview, 'Application preview', 'letter')}</Grid.Col>
-          </Grid>
-        </Tabs.Panel>
+        {draft.letter && letterPreview !== null && (
+          <Tabs.Panel value="letter" pt="md">
+            <Grid gap="lg">
+              <Grid.Col span={5}>
+                <Stack>
+                  <RevisePanel onRevise={reviseLetter} canUndo={!!undo.letter} onUndo={undoLetter} busy={revising !== null} />
+                  <Box onMouseUp={fieldHighlight('letter')} onKeyUp={fieldHighlight('letter')}>
+                    <LetterEditor letter={draft.letter} resetKey={resetKey} disabled={revising === 'letter'} onChange={(letter) => update((d) => ({ ...d, letter }))} />
+                  </Box>
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={7}>{preview(letterPreview, 'Application preview', 'letter')}</Grid.Col>
+            </Grid>
+          </Tabs.Panel>
+        )}
 
         <Tabs.Panel value="cv" pt="md">
           <Grid gap="lg">

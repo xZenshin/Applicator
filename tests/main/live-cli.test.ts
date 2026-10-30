@@ -52,6 +52,6 @@ describe.skipIf(process.env.LIVE_CLI !== '1')('live Claude CLI', () => {
     for (const section of SECTION_KEYS) {
       for (const item of out.cv[section]) expect(known.has(item.id)).toBe(true)
     }
-    expect(out.letter.paragraphs.length).toBeGreaterThan(0)
+    expect(out.letter?.paragraphs.length).toBeGreaterThan(0)
   }, 300_000)
 })

@@ -14,6 +14,8 @@ export function cvHtml(profile: Profile, draft: Draft): string {
   return renderCvHtml(profile, draft.cv, { language: draft.job.language, fontCss: FONT_CSS })
 }
 
-export function letterHtml(profile: Profile, draft: Draft, date = new Date()): string {
+/** null for a CV-only application, which has no letter. */
+export function letterHtml(profile: Profile, draft: Draft, date = new Date()): string | null {
+  if (!draft.letter) return null
   return renderLetterHtml(profile, draft.letter, { language: draft.job.language, date, fontCss: FONT_CSS })
 }

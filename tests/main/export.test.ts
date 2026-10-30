@@ -36,6 +36,13 @@ describe('exportApplicationPdfs', () => {
     expect((await loadApplication(dataDir, id)).meta.exportedAt).toBe(now.toISOString())
   })
 
+  it('writes only the CV for a CV-only application', async () => {
+    const meta = await exportApplicationPdfs({ dataDir, id, html: { cv: '<cv/>', letter: null }, toPdf, now: new Date() })
+    expect(await readdir(applicationDir(dataDir, id))).not.toContain('Application - Acme - Data Engineer.pdf')
+    expect(meta.cvPdf).toBe('CV - Jane Doe - Acme.pdf')
+    expect(meta.letterPdf).toBeNull()
+  })
+
   it('re-export overwrites the same files', async () => {
     await exportApplicationPdfs({ dataDir, id, html: { cv: 'v1', letter: 'v1' }, toPdf, now: new Date() })
     const before = (await readdir(applicationDir(dataDir, id))).sort()

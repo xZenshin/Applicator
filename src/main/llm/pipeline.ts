@@ -10,6 +10,8 @@ import {
   type Style
 } from '../../shared/types'
 import {
+  CV_ONLY_REVISE_SYSTEM,
+  CV_ONLY_TAILOR_SYSTEM,
   CV_REVISE_SYSTEM,
   LETTER_REVISE_SYSTEM,
   LETTER_SYSTEM,
@@ -17,26 +19,35 @@ import {
   buildCvReviseInput,
   buildLetterInput,
   buildLetterReviseInput,
-  buildTailorInput
+  buildTailorInput,
+  type CvOnlyContext
 } from './prompts'
 import type { RunFn } from './run-fn'
 import { normalizeLanguage, sanitizeCv } from './sanitize'
 import { TailorOutputSchema } from './schemas'
 
+/** With cvOnly, the CV gets a motivated summary in place of a letter, and no letter is written. */
 export async function generateApplication(a: {
   run: RunFn
   profile: Profile
   style: Style
   jobDescription: string
   instructions: string
+  ownText?: string
+  cvOnly?: boolean
   onStage: (s: GenerationStage) => void
-}): Promise<{ job: JobInfo; cv: CvContent; letter: ApplicationLetter; warnings: string[] }> {
+}): Promise<{ job: JobInfo; cv: CvContent; letter: ApplicationLetter | null; warnings: string[] }> {
   a.onStage('tailoring')
-  const tailored = await a.run({ system: TAILOR_SYSTEM, input: buildTailorInput(a), schema: TailorOutputSchema })
+  const tailored = await a.run({
+    system: a.cvOnly ? CV_ONLY_TAILOR_SYSTEM : TAILOR_SYSTEM,
+    input: buildTailorInput({ ...a, cvOnly: a.cvOnly ? { style: a.style, ownText: a.ownText } : undefined }),
+    schema: TailorOutputSchema
+  })
   const { cv, warnings } = sanitizeCv(a.profile, tailored.cv)
   const language = normalizeLanguage(tailored.job.language)
   if (language.warning) warnings.push(language.warning)
   const job = { ...tailored.job, language: language.language }
+  if (a.cvOnly) return { job, cv, letter: null, warnings }
 
   a.onStage('writing')
   const letter = await a.run({
@@ -60,9 +71,11 @@ export async function reviseCv(a: {
   cv: CvContent
   instruction: string
   instructions?: string
+  cvOnly?: CvOnlyContext
   highlight?: Highlight
 }): Promise<{ cv: CvContent; warnings: string[] }> {
-  const revised = await a.run({ system: CV_REVISE_SYSTEM, input: buildCvReviseInput(a), schema: CvContentSchema })
+  const system = a.cvOnly ? CV_ONLY_REVISE_SYSTEM : CV_REVISE_SYSTEM
+  const revised = await a.run({ system, input: buildCvReviseInput(a), schema: CvContentSchema })
   return sanitizeCv(a.profile, withoutHighlightMarks(revised))
 }
 
@@ -76,6 +89,7 @@ export async function reviseLetter(a: {
   letter: ApplicationLetter
   instruction: string
   instructions?: string
+  ownText?: string
   highlight?: Highlight
 }): Promise<ApplicationLetter> {
   const revised = await a.run({ system: LETTER_REVISE_SYSTEM, input: buildLetterReviseInput(a), schema: ApplicationLetterSchema })

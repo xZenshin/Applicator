@@ -176,9 +176,12 @@ export interface Highlight {
 export const DraftSchema = z.object({
   version: z.literal(1),
   instructions: z.string(),
+  /** Text the user wrote for the letter before generating it; drafts from before it was stored read as ''. */
+  ownText: z.string().default(''),
   job: JobInfoSchema,
   cv: CvContentSchema,
-  letter: ApplicationLetterSchema,
+  /** null for a CV-only application: the CV's summary then does the letter's job. */
+  letter: ApplicationLetterSchema.nullable(),
   untranslatedIds: z.array(z.string()),
   warnings: z.array(z.string())
 })

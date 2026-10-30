@@ -12,7 +12,7 @@ import {
   setExported
 } from '../../src/main/storage/applications'
 import { AppError } from '../../src/shared/errors'
-import { sampleDraft, sampleProfile } from '../fixtures/sample-data'
+import { sampleDraft, sampleLetter, sampleProfile } from '../fixtures/sample-data'
 
 let dataDir: string
 beforeEach(async () => {
@@ -71,12 +71,11 @@ describe('loadApplication / saveDraft / setExported', () => {
 
   it('saveDraft updates draft and updatedAt', async () => {
     const meta = await create(new Date(2026, 9, 29))
-    const draft = sampleDraft()
-    draft.letter.greeting = 'Changed greeting'
+    const draft = { ...sampleDraft(), letter: { ...sampleLetter(), greeting: 'Changed greeting' } }
     const later = new Date(2026, 9, 30)
     const updated = await saveDraft(dataDir, meta.id, draft, later)
     expect(updated.updatedAt).toBe(later.toISOString())
-    expect((await loadApplication(dataDir, meta.id)).draft.letter.greeting).toBe('Changed greeting')
+    expect((await loadApplication(dataDir, meta.id)).draft.letter?.greeting).toBe('Changed greeting')
   })
 
   it('setExported records file names and time', async () => {

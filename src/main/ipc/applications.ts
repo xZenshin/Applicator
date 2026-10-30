@@ -18,7 +18,7 @@ export function registerApplicationsIpc(): void {
     saveDraft(await getDataDir(), id, draft, new Date())
   )
 
-  handle('applications:exportPdfs', async (id: string, html: { cv: string; letter: string }) =>
+  handle('applications:exportPdfs', async (id: string, html: { cv: string; letter: string | null }) =>
     exportApplicationPdfs({ dataDir: await getDataDir(), id, html, toPdf: htmlToPdf, now: new Date() })
   )
 
