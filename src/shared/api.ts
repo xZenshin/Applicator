@@ -14,7 +14,7 @@ import type {
 
 export type IpcResult<T> = { ok: true; value: T } | { ok: false; error: { kind: string; message: string } }
 
-export type GenerationStage = 'tailoring' | 'writing'
+export type GenerationStage = 'tailoring' | 'fitting' | 'writing'
 
 export interface SettingsView {
   settings: Settings

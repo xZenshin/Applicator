@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ClaudeError } from '../../src/main/claude/errors'
-import { generateApplication, reviseCv, reviseLetter } from '../../src/main/llm/pipeline'
+import { generateApplication, reviseCv, reviseLetter, type MeasureCv } from '../../src/main/llm/pipeline'
 import {
   CV_ONLY_REVISE_SYSTEM,
   CV_ONLY_TAILOR_SYSTEM,
@@ -12,7 +12,7 @@ import {
   TAILOR_SYSTEM
 } from '../../src/main/llm/prompts'
 import { makeRunFn, type RunFn } from '../../src/main/llm/run-fn'
-import { ApplicationLetterSchema } from '../../src/shared/types'
+import { ApplicationLetterSchema, type CvContent, type Profile } from '../../src/shared/types'
 import type { GenerationStage } from '../../src/shared/api'
 import { sampleCv, sampleJob, sampleLetter, sampleProfile, sampleStyle } from '../fixtures/sample-data'
 
@@ -83,6 +83,69 @@ describe('generateApplication', () => {
     expect(out.cv.experience.map((e) => e.id)).toEqual(['exp_01'])
     expect(out.letter).toEqual(sampleLetter())
     expect(out.warnings.join(' ')).toContain('exp_99')
+  })
+})
+
+describe('fitting the CV on one page', () => {
+  const PAGE = 1123
+  /** A stand-in for rendering the CV: returns these heights in turn, then a height that fits. */
+  const heights = (...hs: number[]): { measureCv: MeasureCv; calls: { cv: CvContent; language: string }[] } => {
+    const calls: { cv: CvContent; language: string }[] = []
+    const measureCv = async (_profile: Profile, cv: CvContent, language: string): Promise<number> => {
+      calls.push({ cv, language })
+      return hs.shift() ?? PAGE
+    }
+    return { measureCv, calls }
+  }
+  const shorter = (): CvContent => ({ ...sampleCv(), summary: 'SHORTER' })
+  const generate = (run: RunFn, measureCv: MeasureCv, stages: GenerationStage[] = [], cvOnly = false): ReturnType<typeof generateApplication> =>
+    generateApplication({
+      run,
+      profile: sampleProfile(),
+      style: sampleStyle(),
+      jobDescription: JOB_TEXT,
+      instructions: '',
+      cvOnly,
+      measureCv,
+      onStage: (s) => stages.push(s)
+    })
+
+  it('leaves a CV that fits alone', async () => {
+    const { run, calls } = fakeRun({ [TAILOR_SYSTEM]: tailorResponse(), [LETTER_SYSTEM]: sampleLetter() })
+    const m = heights(PAGE)
+    const stages: GenerationStage[] = []
+    await generate(run, m.measureCv, stages)
+    expect(calls.map((c) => c.system)).toEqual([TAILOR_SYSTEM, LETTER_SYSTEM])
+    expect(stages).toEqual(['tailoring', 'writing'])
+    expect(m.calls).toHaveLength(1)
+    expect(m.calls[0].language).toBe('en')
+  })
+
+  it('asks Claude to shorten a CV that runs over, then writes the letter from the shorter CV', async () => {
+    const { run, calls } = fakeRun({ [TAILOR_SYSTEM]: tailorResponse(), [CV_REVISE_SYSTEM]: shorter(), [LETTER_SYSTEM]: sampleLetter() })
+    const stages: GenerationStage[] = []
+    const out = await generate(run, heights(PAGE + 150, PAGE).measureCv, stages)
+    expect(calls.map((c) => c.system)).toEqual([TAILOR_SYSTEM, CV_REVISE_SYSTEM, LETTER_SYSTEM])
+    expect(calls[1].input).toContain('about 9 lines too long')
+    expect(calls[2].input).toContain('SHORTER')
+    expect(out.cv.summary).toBe('SHORTER')
+    expect(stages).toEqual(['tailoring', 'fitting', 'writing'])
+    expect(out.warnings.join(' ')).not.toMatch(/one page/)
+  })
+
+  it('stops after two tries and warns that the CV is still too long', async () => {
+    const { run, calls } = fakeRun({ [TAILOR_SYSTEM]: tailorResponse(), [CV_REVISE_SYSTEM]: shorter(), [LETTER_SYSTEM]: sampleLetter() })
+    const out = await generate(run, heights(PAGE + 100, PAGE + 60, PAGE + 40).measureCv)
+    expect(calls.filter((c) => c.system === CV_REVISE_SYSTEM)).toHaveLength(2)
+    expect(out.warnings.join(' ')).toContain('still about 3 lines longer than one page')
+  })
+
+  it('keeps the motivated-summary prompt when fitting a CV-only application', async () => {
+    const { run, calls } = fakeRun({ [CV_ONLY_TAILOR_SYSTEM]: tailorResponse(), [CV_ONLY_REVISE_SYSTEM]: shorter() })
+    const out = await generate(run, heights(PAGE + 150, PAGE).measureCv, [], true)
+    expect(calls.map((c) => c.system)).toEqual([CV_ONLY_TAILOR_SYSTEM, CV_ONLY_REVISE_SYSTEM])
+    expect(out.cv.summary).toBe('SHORTER')
+    expect(out.letter).toBeNull()
   })
 })
 

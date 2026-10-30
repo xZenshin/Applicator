@@ -2,7 +2,7 @@ import type { GenerationStage } from '../shared/api'
 import { AppError } from '../shared/errors'
 import { isProfileUsable } from '../shared/profile-checks'
 import type { ApplicationLetter, ApplicationMeta, CvContent, Highlight } from '../shared/types'
-import { generateApplication, reviseCv, reviseLetter } from './llm/pipeline'
+import { generateApplication, reviseCv, reviseLetter, type MeasureCv } from './llm/pipeline'
 import type { RunFn } from './llm/run-fn'
 import { createApplication, loadApplication } from './storage/applications'
 import { loadProfile } from './storage/profile'
@@ -18,6 +18,7 @@ export async function runGeneration(a: {
   instructions: string
   ownText?: string
   cvOnly?: boolean
+  measureCv?: MeasureCv
   onStage: (s: GenerationStage) => void
   now: Date
 }): Promise<ApplicationMeta> {
@@ -41,6 +42,7 @@ export async function runGeneration(a: {
     instructions: a.instructions,
     ownText: a.ownText,
     cvOnly: a.cvOnly,
+    measureCv: a.measureCv,
     onStage: a.onStage
   })
   return createApplication(a.dataDir, {

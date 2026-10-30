@@ -14,7 +14,8 @@ const cvRules = (summaryRule: string): string => `Rules:
 ${summaryRule}
 6. labels: the section headings, and the word for an ongoing period ("present"), in the posting's language.
 7. Dates, employers, institutions and locations are added later from the profile by id, so do not put them in the text fields.
-8. Follow the candidate's extra instructions unless they conflict with these rules.`
+8. Follow the candidate's extra instructions unless they conflict with these rules.
+9. The CV must fit on one A4 page; as a rough guide, that is about 40 lines of text besides the name and the section headings. Use the page well, but never go over it: when the profile has more relevant material than fits, keep the most relevant.`
 
 const LETTER_RULES = `Rules:
 1. Write in the posting's language, given as job.language in the job analysis.
@@ -61,6 +62,13 @@ ${LETTER_RULES}
 Apply the requested change and keep everything else as it is. The requested change takes priority over the target length, the writing samples and the text the candidate wrote for this application, but never over rule 3: do not add facts that are not in the profile or the tailored CV. Return the complete revised letter.
 
 ${highlightRule('letter')}`
+
+/** The requested change when the rendered CV runs past one page. */
+export function fitOnePageInstruction(overflowLines: number, cvOnly = false): string {
+  const lines = `${overflowLines} line${overflowLines === 1 ? '' : 's'}`
+  const summary = cvOnly ? ' Shorten the summary only if nothing else can go: it does the job of the application letter.' : ''
+  return `The CV must fit on one A4 page, but it is about ${lines} too long. Shorten it just enough to fit: first leave out the least relevant items, bullets and details, then shorten long text. Cut no more than needed, so the page stays full.${summary}`
+}
 
 const DEFAULT_TARGET_WORDS = 350
 

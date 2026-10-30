@@ -95,6 +95,15 @@ describe('runGeneration', () => {
     expect(stages).toEqual(['tailoring'])
   })
 
+  it('saves the CV as shortened to fit one page', async () => {
+    await seed()
+    const shorter = { ...sampleCv(), summary: 'SHORTER' }
+    const { run } = fakeRun({ [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() }, [CV_REVISE_SYSTEM]: shorter, [LETTER_SYSTEM]: sampleLetter() })
+    const heights = [1300, 1100]
+    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', measureCv: async () => heights.shift() ?? 1100, onStage: () => {}, now: NOW })
+    expect((await loadApplication(dataDir, meta.id)).draft.cv.summary).toBe('SHORTER')
+  })
+
   it('leaves no application folder when the letter call fails', async () => {
     await seed()
     const { run } = fakeRun({

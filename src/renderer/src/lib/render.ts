@@ -1,8 +1,8 @@
 import { renderCvHtml } from '../../../shared/templates/cv'
+import { FONT_CSS } from '../../../shared/templates/fonts'
 import { renderLetterHtml } from '../../../shared/templates/letter'
 import type { Draft, Profile } from '../../../shared/types'
 import { cvFromProfile } from './cv-edit'
-import { FONT_CSS } from './fonts'
 
 /** Everything in the profile, untailored, in the same template as the exported CV. */
 export function profileCvHtml(profile: Profile): string {

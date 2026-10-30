@@ -7,6 +7,7 @@ import { assertSubscriptionAuth } from '../connection'
 import { getDataDir, makeAppRunFn, requireClaudeCommand } from '../context'
 import { runCvRevision, runGeneration, runLetterRevision } from '../generation'
 import type { RunFn } from '../llm/run-fn'
+import { measureCvHeight } from '../pdf/measure'
 import { handle } from './handle'
 
 let current: AbortController | null = null
@@ -49,6 +50,7 @@ export function registerLlmIpc(): void {
         instructions: String(input.instructions ?? ''),
         ownText: String(input.ownText ?? ''),
         cvOnly: input.cvOnly === true,
+        measureCv: measureCvHeight,
         onStage: broadcastStage,
         now: new Date()
       })

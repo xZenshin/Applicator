@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { A4_HEIGHT_PX } from '../../../shared/templates/page-fit'
 import type { Highlight } from '../../../shared/types'
 import { makeHighlight } from '../lib/highlight'
 
 const A4_WIDTH_PX = 794 // 210mm at 96 dpi
-const A4_HEIGHT_PX = 1123
 
 /** What is highlighted in the preview (null if nothing), and where the selection ends, in window coordinates. */
 export interface PreviewHighlight {
@@ -21,15 +21,19 @@ export function PreviewFrame(props: {
   title: string
   /** Called after each mouse or keyboard selection in the preview. */
   onHighlight?: (h: PreviewHighlight) => void
+  /** Called with the document's height in pixels whenever it is laid out. */
+  onMeasure?: (heightPx: number) => void
 }): React.JSX.Element {
   const box = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLIFrameElement>(null)
   const [scale, setScale] = useState(0.6)
   const [height, setHeight] = useState(A4_HEIGHT_PX)
   const onHighlight = useRef(props.onHighlight)
+  const onMeasure = useRef(props.onMeasure)
 
   useEffect(() => {
     onHighlight.current = props.onHighlight
+    onMeasure.current = props.onMeasure
   })
 
   useEffect(() => {
@@ -41,7 +45,10 @@ export function PreviewFrame(props: {
   }, [])
 
   // The body, not the document: the document is never shorter than the frame, so it could only grow.
-  const measure = (doc: Document): void => setHeight(Math.max(A4_HEIGHT_PX, doc.body.offsetHeight))
+  const measure = (doc: Document): void => {
+    setHeight(Math.max(A4_HEIGHT_PX, doc.body.offsetHeight))
+    onMeasure.current?.(doc.body.offsetHeight)
+  }
 
   // Each srcDoc change loads a new document, so the listeners are added again on every load.
   const load = (): void => {
@@ -49,6 +56,8 @@ export function PreviewFrame(props: {
     const doc = iframe?.contentDocument
     if (!iframe || !doc) return
     measure(doc)
+    // The embedded fonts can finish loading after the load event and change the height.
+    void doc.fonts.ready.then(() => measure(doc))
     const report = (): void => onHighlight.current?.(readHighlight(iframe, doc))
     doc.addEventListener('mouseup', report)
     doc.addEventListener('keyup', report)

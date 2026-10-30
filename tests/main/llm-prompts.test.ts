@@ -4,6 +4,7 @@ import {
   buildLetterInput,
   buildLetterReviseInput,
   buildTailorInput,
+  fitOnePageInstruction,
   targetWordCount
 } from '../../src/main/llm/prompts'
 import { TailorOutputSchema, toCliSchema } from '../../src/main/llm/schemas'
@@ -186,6 +187,21 @@ describe('CV-only applications', () => {
       expect(input).toContain('## Text the candidate wrote for this application\nOWN-TEXT')
       expect(input).not.toContain('Keep it under one page.')
     }
+  })
+})
+
+describe('one-page CVs', () => {
+  it('every CV prompt says the CV must fit on one A4 page', async () => {
+    const prompts = await import('../../src/main/llm/prompts')
+    for (const prompt of [prompts.TAILOR_SYSTEM, prompts.CV_REVISE_SYSTEM, prompts.CV_ONLY_TAILOR_SYSTEM, prompts.CV_ONLY_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/fit on one A4 page/)
+    }
+  })
+
+  it('the request to shorten says how far over the CV is and to leave out the least relevant first', () => {
+    expect(fitOnePageInstruction(1)).toContain('about 1 line too long')
+    expect(fitOnePageInstruction(9)).toContain('about 9 lines too long')
+    expect(fitOnePageInstruction(9)).toMatch(/least relevant/)
   })
 })
 

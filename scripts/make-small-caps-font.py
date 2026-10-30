@@ -24,7 +24,7 @@ SCALE = 0.7
 FAMILY = 'Cabin Small Caps'
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'node_modules' / '@fontsource' / 'cabin'
-OUT = ROOT / 'src' / 'renderer' / 'src' / 'assets' / 'fonts'
+OUT = ROOT / 'src' / 'shared' / 'templates' / 'font-files'
 STYLES = {'Regular': 'cabin-latin-400-normal.woff2', 'Bold': 'cabin-latin-700-normal.woff2'}
 
 

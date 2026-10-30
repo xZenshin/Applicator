@@ -2,6 +2,7 @@ import { Alert, Badge, Box, Button, Grid, Group, Loader, Select, Stack, Tabs, Te
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { overflowLines } from '../../../shared/templates/page-fit'
 import type { ApplicationLetter, ApplicationMeta, ApplicationRecord, CvContent, Draft, Highlight } from '../../../shared/types'
 import { api, errorMessage } from '../api'
 import { AutosaveIndicator } from '../components/AutosaveIndicator'
@@ -39,6 +40,7 @@ export default function ReviewPage(): React.JSX.Element {
   const [resetKey, setResetKey] = useState(0)
   const [exporting, setExporting] = useState(false)
   const [revising, setRevising] = useState<Part | null>(null)
+  const [cvOverflow, setCvOverflow] = useState(0)
   // Keyed, so each new highlight gets a fresh popover.
   const [target, setTarget] = useState<(HighlightTarget & { key: number }) | null>(null)
   const closeHighlight = useCallback(() => setTarget(null), [])
@@ -167,9 +169,21 @@ export default function ReviewPage(): React.JSX.Element {
     ? LANGUAGES
     : [...LANGUAGES, { value: draft.job.language, label: draft.job.language.toUpperCase() }]
 
+  // Claude fits the CV on one page when it generates it; this catches edits that make it longer again.
   const preview = (html: string, title: string, part: Part): React.JSX.Element => (
     <Box style={{ position: 'sticky', top: 16 }}>
-      <PreviewFrame html={html} title={title} onHighlight={(h) => highlightAt(part, h.highlight, h.x, h.y)} />
+      {part === 'cv' && cvOverflow > 0 && (
+        <Text size="sm" mb={8} style={{ color: 'var(--k-warning)' }}>
+          About {cvOverflow} line{cvOverflow === 1 ? '' : 's'} over one page. Untick some items, or ask Claude to make it
+          fit one page.
+        </Text>
+      )}
+      <PreviewFrame
+        html={html}
+        title={title}
+        onHighlight={(h) => highlightAt(part, h.highlight, h.x, h.y)}
+        onMeasure={part === 'cv' ? (h) => setCvOverflow(overflowLines(h)) : undefined}
+      />
     </Box>
   )
 
