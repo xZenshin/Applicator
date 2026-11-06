@@ -24,6 +24,18 @@ export function sanitizeCv(profile: Profile, cv: CvContent): { cv: CvContent; wa
   return { cv: clean, warnings }
 }
 
+/** Puts back jobs marked to always include that Claude left out, with their original text. */
+export function restoreAlwaysIncluded(profile: Profile, cv: CvContent): { cv: CvContent; warnings: string[] } {
+  const present = new Set(cv.experience.map((e) => e.id))
+  const missing = profile.experience.filter((p) => p.alwaysInclude && !present.has(p.id))
+  return {
+    cv: missing.length === 0 ? cv : { ...cv, experience: [...cv.experience, ...missing.map((p) => ({ id: p.id, title: p.title, bullets: p.bullets }))] },
+    warnings: missing.map(
+      (p) => `Claude left out "${p.title} @ ${p.employer}", which you marked to always include, so it was added with its original text. It may need shortening or translating.`
+    )
+  }
+}
+
 /** "da-DK" → "da". Anything that isn't a language code becomes "en" with a warning. */
 export function normalizeLanguage(code: string): { language: string; warning?: string } {
   const match = /^([a-z]{2,3})(-[a-z0-9]+)*$/i.exec(code.trim())

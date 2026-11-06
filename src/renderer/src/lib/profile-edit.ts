@@ -6,17 +6,13 @@ export type ProfileItem<S extends SectionKey = SectionKey> = Profile[S][number]
 function blankItem(section: SectionKey, id: string): ProfileItem {
   switch (section) {
     case 'experience':
-      return { id, title: '', employer: '', location: '', start: '', end: '', bullets: [] }
+      return { id, title: '', employer: '', location: '', start: '', end: '', bullets: [], alwaysInclude: false }
     case 'education':
-      return { id, degree: '', institution: '', location: '', start: '', end: '', details: [] }
+      return { id, degree: '', gpa: '', institution: '', start: '', end: '' }
+    case 'projects':
+      return { id, name: '', description: '', technologies: '' }
     case 'skills':
       return { id, name: '', category: '' }
-    case 'languages':
-      return { id, name: '', level: '' }
-    case 'projects':
-      return { id, name: '', context: '', url: '', date: '', bullets: [] }
-    case 'certifications':
-      return { id, name: '', issuer: '', date: '' }
   }
 }
 

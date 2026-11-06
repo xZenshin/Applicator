@@ -1,30 +1,27 @@
 import type { SectionKey } from '../../../shared/types'
 import type { ProfileItem } from './profile-edit'
 
-export type FieldKind = 'text' | 'textarea' | 'month' | 'monthOrPresent' | 'lines'
+export type FieldKind = 'text' | 'textarea' | 'month' | 'monthOrPresent' | 'lines' | 'checkbox'
 export interface FieldDescriptor {
   key: string
   label: string
   kind: FieldKind
+  placeholder?: string
 }
 
 export const SECTION_TITLES: Record<SectionKey, string> = {
-  experience: 'Experience',
+  skills: 'Technical skills',
   education: 'Education',
-  skills: 'Skills',
-  languages: 'Languages',
-  projects: 'Projects',
-  certifications: 'Certifications & courses'
+  experience: 'Experience',
+  projects: 'Projects'
 }
 
 /** Singular nouns for "Add …" buttons. */
 export const SECTION_ITEM_NAMES: Record<SectionKey, string> = {
-  experience: 'experience',
-  education: 'education',
   skills: 'skill',
-  languages: 'language',
-  projects: 'project',
-  certifications: 'certification or course'
+  education: 'education',
+  experience: 'experience',
+  projects: 'project'
 }
 
 export const SECTION_FIELDS: Record<SectionKey, FieldDescriptor[]> = {
@@ -34,35 +31,24 @@ export const SECTION_FIELDS: Record<SectionKey, FieldDescriptor[]> = {
     { key: 'location', label: 'Location', kind: 'text' },
     { key: 'start', label: 'Start', kind: 'month' },
     { key: 'end', label: 'End', kind: 'monthOrPresent' },
-    { key: 'bullets', label: 'Bullet points, one per line', kind: 'lines' }
+    { key: 'alwaysInclude', label: 'Always include on the CV', kind: 'checkbox' },
+    { key: 'bullets', label: 'Description: one line shows as a paragraph, several as bullet points', kind: 'lines' }
   ],
   education: [
-    { key: 'degree', label: 'Degree', kind: 'text' },
-    { key: 'institution', label: 'Institution', kind: 'text' },
-    { key: 'location', label: 'Location', kind: 'text' },
+    { key: 'degree', label: 'Title', kind: 'text', placeholder: 'MSc in Computer Science' },
+    { key: 'gpa', label: 'GPA', kind: 'text' },
+    { key: 'institution', label: 'University', kind: 'text' },
     { key: 'start', label: 'Start', kind: 'month' },
-    { key: 'end', label: 'End', kind: 'monthOrPresent' },
-    { key: 'details', label: 'Details, one per line', kind: 'lines' }
+    { key: 'end', label: 'End', kind: 'monthOrPresent' }
+  ],
+  projects: [
+    { key: 'name', label: 'Project name', kind: 'text' },
+    { key: 'technologies', label: 'Technologies, separated by commas', kind: 'text' },
+    { key: 'description', label: 'Short description', kind: 'textarea' }
   ],
   skills: [
     { key: 'name', label: 'Skill', kind: 'text' },
     { key: 'category', label: 'Category', kind: 'text' }
-  ],
-  languages: [
-    { key: 'name', label: 'Language', kind: 'text' },
-    { key: 'level', label: 'Level', kind: 'text' }
-  ],
-  projects: [
-    { key: 'name', label: 'Project name', kind: 'text' },
-    { key: 'context', label: 'Context (e.g. side project, course)', kind: 'text' },
-    { key: 'url', label: 'Link', kind: 'text' },
-    { key: 'date', label: 'Date', kind: 'month' },
-    { key: 'bullets', label: 'Bullet points, one per line', kind: 'lines' }
-  ],
-  certifications: [
-    { key: 'name', label: 'Name', kind: 'text' },
-    { key: 'issuer', label: 'Issuer', kind: 'text' },
-    { key: 'date', label: 'Date', kind: 'month' }
   ]
 }
 
@@ -77,11 +63,7 @@ export function itemLabel(section: SectionKey, item: ProfileItem): string {
       return join(i.degree, ', ', i.institution) || 'New education'
     case 'skills':
       return join(i.name, ' · ', i.category) || 'New skill'
-    case 'languages':
-      return join(i.name, ' · ', i.level) || 'New language'
     case 'projects':
-      return join(i.name, ' — ', i.context) || 'New project'
-    case 'certifications':
-      return join(i.name, ' — ', i.issuer) || 'New certification'
+      return i.name || 'New project'
   }
 }

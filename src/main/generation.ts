@@ -1,8 +1,8 @@
 import type { GenerationStage } from '../shared/api'
 import { AppError } from '../shared/errors'
 import { isProfileUsable } from '../shared/profile-checks'
-import type { ApplicationLetter, ApplicationMeta, CvContent } from '../shared/types'
-import { generateApplication, reviseCv, reviseLetter } from './llm/pipeline'
+import type { ApplicationLetter, ApplicationMeta, CvContent, Highlight } from '../shared/types'
+import { generateApplication, reviseCv, reviseLetter, type MeasureCv } from './llm/pipeline'
 import type { RunFn } from './llm/run-fn'
 import { createApplication, loadApplication } from './storage/applications'
 import { loadProfile } from './storage/profile'
@@ -10,12 +10,15 @@ import { loadStyle } from './storage/style'
 
 const MIN_JOB_DESCRIPTION_CHARS = 50
 
-/** Generates a CV + letter and saves them as a new application. Nothing is written unless both calls succeed. */
+/** Generates a CV + letter (or, with cvOnly, just the CV) and saves them as a new application. Nothing is written unless every call succeeds. */
 export async function runGeneration(a: {
   run: RunFn
   dataDir: string
   jobDescription: string
   instructions: string
+  ownText?: string
+  cvOnly?: boolean
+  measureCv?: MeasureCv
   onStage: (s: GenerationStage) => void
   now: Date
 }): Promise<ApplicationMeta> {
@@ -37,11 +40,14 @@ export async function runGeneration(a: {
     style,
     jobDescription: a.jobDescription,
     instructions: a.instructions,
+    ownText: a.ownText,
+    cvOnly: a.cvOnly,
+    measureCv: a.measureCv,
     onStage: a.onStage
   })
   return createApplication(a.dataDir, {
     jobDescription: a.jobDescription,
-    draft: { version: 1, instructions: a.instructions, job, cv, letter, untranslatedIds: [], warnings },
+    draft: { version: 1, instructions: a.instructions, ownText: a.ownText ?? '', job, cv, letter, untranslatedIds: [], warnings },
     profile,
     now: a.now
   })
@@ -54,8 +60,10 @@ export async function runCvRevision(a: {
   id: string
   cv: CvContent
   instruction: string
+  highlight?: Highlight
 }): Promise<{ cv: CvContent; warnings: string[] }> {
   const record = await loadApplication(a.dataDir, a.id)
+  const cvOnly = record.draft.letter === null ? { style: await loadStyle(a.dataDir), ownText: record.draft.ownText } : undefined
   return reviseCv({
     run: a.run,
     profile: record.profile,
@@ -63,7 +71,9 @@ export async function runCvRevision(a: {
     job: record.draft.job,
     cv: a.cv,
     instruction: a.instruction,
-    instructions: record.draft.instructions
+    instructions: record.draft.instructions,
+    cvOnly,
+    highlight: a.highlight
   })
 }
 
@@ -74,6 +84,7 @@ export async function runLetterRevision(a: {
   cv: CvContent
   letter: ApplicationLetter
   instruction: string
+  highlight?: Highlight
 }): Promise<ApplicationLetter> {
   const record = await loadApplication(a.dataDir, a.id)
   return reviseLetter({
@@ -85,6 +96,8 @@ export async function runLetterRevision(a: {
     cv: a.cv,
     letter: a.letter,
     instruction: a.instruction,
-    instructions: record.draft.instructions
+    instructions: record.draft.instructions,
+    ownText: record.draft.ownText,
+    highlight: a.highlight
   })
 }

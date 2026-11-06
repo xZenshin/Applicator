@@ -10,21 +10,19 @@ describe('addItem', () => {
     const second = addItem(first.profile, 'experience')
     expect([first.id, second.id]).toEqual(['exp_01', 'exp_02'])
     expect(second.profile.experience).toEqual([
-      { id: 'exp_01', title: '', employer: '', location: '', start: '', end: '', bullets: [] },
-      { id: 'exp_02', title: '', employer: '', location: '', start: '', end: '', bullets: [] }
+      { id: 'exp_01', title: '', employer: '', location: '', start: '', end: '', bullets: [], alwaysInclude: false },
+      { id: 'exp_02', title: '', employer: '', location: '', start: '', end: '', bullets: [], alwaysInclude: false }
     ])
   })
 
   it('creates the right blank shape for every section', () => {
     let p = emptyProfile()
-    for (const s of ['education', 'skills', 'languages', 'projects', 'certifications'] as const) {
+    for (const s of ['education', 'skills', 'projects'] as const) {
       p = addItem(p, s).profile
     }
-    expect(p.education[0]).toEqual({ id: 'edu_01', degree: '', institution: '', location: '', start: '', end: '', details: [] })
+    expect(p.education[0]).toEqual({ id: 'edu_01', degree: '', gpa: '', institution: '', start: '', end: '' })
+    expect(p.projects[0]).toEqual({ id: 'proj_01', name: '', description: '', technologies: '' })
     expect(p.skills[0]).toEqual({ id: 'skill_01', name: '', category: '' })
-    expect(p.languages[0]).toEqual({ id: 'lang_01', name: '', level: '' })
-    expect(p.projects[0]).toEqual({ id: 'proj_01', name: '', context: '', url: '', date: '', bullets: [] })
-    expect(p.certifications[0]).toEqual({ id: 'cert_01', name: '', issuer: '', date: '' })
   })
 })
 

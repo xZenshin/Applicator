@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { renderCvHtml } from '../../src/shared/templates/cv'
 import { escapeHtml } from '../../src/shared/templates/escape'
-import { formatLetterDate, formatRange, formatYearMonth } from '../../src/shared/templates/format'
+import { formatLetterDate, formatYearRange } from '../../src/shared/templates/format'
 import { renderLetterHtml } from '../../src/shared/templates/letter'
 import { sampleCv, sampleLetter, sampleProfile } from '../fixtures/sample-data'
 
@@ -11,18 +11,85 @@ const danishCv = () => ({
   labels: { ...sampleCv().labels, present: 'nu' }
 })
 
+const contactLine = (html: string): string => /<div class="contact">(.*?)<\/div>/.exec(html)?.[1] ?? ''
+/** The text a reader sees: markup removed (line breaks kept as <br>). */
+const visible = (html: string): string => html.replace(/<(?!br>)[^>]+>/g, '')
+
 describe('renderCvHtml', () => {
-  it('takes employer and dates from the profile and text from the cv', () => {
-    const html = renderCvHtml(sampleProfile(), danishCv(), { language: 'da' })
-    for (const text of ['Ørsted A/S', 'Dataingeniør', 'Byggede pipelines', 'nu', '2021', 'Jane Doe', 'jane@example.com']) {
+  it('takes employer, location and years from the profile and text from the cv', () => {
+    const html = visible(renderCvHtml(sampleProfile(), danishCv(), { language: 'da' }))
+    for (const text of ['Ørsted A/S | Copenhagen', 'Dataingeniør', 'Byggede pipelines', '2021 – nu', 'jane@example.com']) {
       expect(html).toContain(text)
     }
+  })
+
+  it('puts the last word of the name on its own line', () => {
+    const named = (fullName: string): string => {
+      const profile = sampleProfile()
+      profile.personal.fullName = fullName
+      const html = renderCvHtml(profile, sampleCv(), { language: 'en' })
+      return visible(/<h1>(.*?)<\/h1>/.exec(html)?.[1] ?? '')
+    }
+    expect(named('Jane Doe')).toBe('Jane<br>Doe')
+    expect(named('Anna Marie Jensen')).toBe('Anna Marie<br>Jensen')
+    expect(named('Cher')).toBe('Cher')
+  })
+
+  it('lists location, phone, email and website separated by bars', () => {
+    const html = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
+    expect(contactLine(html)).toBe(
+      'Copenhagen, Denmark | +45 12 34 56 78 | jane@example.com | <a href="https://jane.dev/">jane.dev</a>'
+    )
+  })
+
+  it('shows the summary without a heading, then skills, education and experience', () => {
+    const html = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
+    expect(html).toContain(`<section class="intro"><p>${sampleCv().summary}</p></section>`)
+    const order = [sampleCv().summary, 'Technical Skills', 'Education', 'Experience'].map((text) =>
+      visible(html).indexOf(text)
+    )
+    expect(order.every((at) => at > -1)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+  })
+
+  it('shows a degree as its title, GPA, years and university, and nothing more', () => {
+    const html = visible(renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' }))
+    expect(html).toContain('MSc in Computer Science GPA 10.5 · 2016 – 2018')
+    expect(html).toContain('DTU')
+  })
+
+  it('writes the GPA label in the language of the CV, and leaves it out when no GPA is entered', () => {
+    const labels = { ...sampleCv().labels, gpa: 'Snit' }
+    const danish = visible(renderCvHtml(sampleProfile(), { ...sampleCv(), labels }, { language: 'da' }))
+    expect(danish).toContain('MSc in Computer Science Snit 10.5 · 2016 – 2018')
+
+    const profile = sampleProfile()
+    profile.education[0].gpa = ''
+    const none = visible(renderCvHtml(profile, sampleCv(), { language: 'en' }))
+    expect(none).toContain('MSc in Computer Science 2016 – 2018')
+    expect(none).not.toContain('GPA')
+  })
+
+  it('shows a project as its name, description and technologies, after experience', () => {
+    const cv = {
+      ...sampleCv(),
+      projects: [{ id: 'proj_01', name: 'Strøm-monitor', description: 'Overvåger pipelines.', technologies: 'Python, Kafka' }]
+    }
+    const html = visible(renderCvHtml(sampleProfile(), cv, { language: 'da' }))
+    const order = ['Experience', 'Projects', 'Strøm-monitor', 'Overvåger pipelines.', 'Python, Kafka'].map((text) => html.indexOf(text))
+    expect(order.every((at) => at > -1)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+  })
+
+  it('leaves out the projects section when no project is selected', () => {
+    const html = visible(renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' }))
+    expect(html).not.toContain('Projects')
+    expect(html).not.toContain('Stream Monitor')
   })
 
   it('only shows selected items', () => {
     const html = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
     expect(html).not.toContain('Contoso ApS')
-    expect(html).not.toContain('Azure Data Engineer Associate')
   })
 
   it('escapes HTML', () => {
@@ -34,9 +101,8 @@ describe('renderCvHtml', () => {
   })
 
   it('omits empty sections', () => {
-    const html = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
-    expect(html).not.toContain('Projects')
-    expect(html).not.toContain('Certifications')
+    const html = visible(renderCvHtml(sampleProfile(), { ...sampleCv(), education: [] }, { language: 'en' }))
+    expect(html).not.toContain('Education')
     expect(html).toContain('Experience')
   })
 
@@ -46,35 +112,75 @@ describe('renderCvHtml', () => {
     expect(html).toContain('/*FONT-CSS*/')
   })
 
-  it('groups skills by category in order of first appearance', () => {
+  it('lists skills as one bullet per category, in order of first appearance', () => {
+    const profile = sampleProfile()
+    profile.skills.push({ id: 'skill_03', name: 'Git', category: '' })
     const cv = {
       ...sampleCv(),
       skills: [
         { id: 'skill_01', name: 'Python', category: 'Programming' },
+        { id: 'skill_03', name: 'Git', category: '' },
         { id: 'skill_02', name: 'SQL', category: 'Programming' }
       ]
     }
+    const html = renderCvHtml(profile, cv, { language: 'en' })
+    expect(html).toContain('<ul><li><strong>Programming</strong>: Python, SQL</li><li>Git</li></ul>')
+  })
+
+  it('shows a single line of text as a paragraph and several as bullets', () => {
+    const cv = {
+      ...sampleCv(),
+      experience: [
+        { id: 'exp_01', title: 'Data Engineer', bullets: ['Built pipelines end-to-end.'] },
+        { id: 'exp_02', title: 'Junior Developer', bullets: ['Maintained tools', 'Fixed bugs'] }
+      ]
+    }
     const html = renderCvHtml(sampleProfile(), cv, { language: 'en' })
-    expect(html.match(/Programming:/g)).toHaveLength(1)
-    expect(html).toContain('Python, SQL')
+    expect(html).toContain('<p>Built pipelines end-to-end.</p>')
+    expect(html).toContain('<ul><li>Maintained tools</li><li>Fixed bugs</li></ul>')
+  })
+
+  it('sets small caps in a small-caps font, so each word stays one piece of text in the PDF', () => {
+    // Small caps drawn at two font sizes (font-variant, or capitals in two sizes) split every word in two
+    // in the PDF, so viewers select "ducation" when "Education" is double-clicked.
+    const profile = sampleProfile()
+    profile.personal.fullName = 'Jane Skou-Doe'
+    const cv = { ...sampleCv(), experience: [{ id: 'exp_01', title: 'R&D engineer', bullets: [] }] }
+    const html = renderCvHtml(profile, cv, { language: 'en' })
+    expect(html).toContain('<h1>Jane<br>Skou-Doe</h1>')
+    expect(html).toContain('<h2>Technical Skills</h2>')
+    expect(html).toContain('<strong>R&amp;D engineer</strong>')
+    expect(html).toMatch(/h1 \{ font-family: 'Cabin Small Caps'/)
+    expect(html).toMatch(/h2, \.entry-title strong \{ font-family: 'Cabin Small Caps'/)
+    expect(html).not.toContain('font-variant')
+    expect(html).not.toContain('class="sc"')
+  })
+
+  it('sets the CV in 10pt Cabin and the letter in 11pt Cabin', () => {
+    const cv = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
+    const letter = renderLetterHtml(sampleProfile(), sampleLetter(), { language: 'en', date: new Date() })
+    for (const html of [cv, letter]) {
+      expect(html).toContain("font-family: 'Cabin'")
+      expect(html).not.toContain('Source Sans 3')
+    }
+    expect(cv).toMatch(/body \{[^}]*font-size: 10pt/)
+    expect(letter).toMatch(/body \{[^}]*font-size: 11pt/)
   })
 })
 
 describe('format', () => {
-  it('formats ranges with a present label', () => {
-    expect(formatRange('2021-03', 'present', 'en', 'Present')).toBe('Mar 2021 – Present')
-    expect(formatRange('2018-08', '2021-02', 'en', 'Present')).toBe('Aug 2018 – Feb 2021')
-    expect(formatRange('', '2021-02', 'en', 'Present')).toBe('Feb 2021')
-    expect(formatYearMonth('', 'en')).toBe('')
+  it('formats ranges as years with a present label', () => {
+    expect(formatYearRange('2021-03', 'present', 'Present')).toBe('2021 – Present')
+    expect(formatYearRange('2018-08', '2021-02', 'Present')).toBe('2018 – 2021')
+    expect(formatYearRange('', '2021-02', 'Present')).toBe('2021')
+    expect(formatYearRange('2021-03', '', 'Present')).toBe('2021')
+    expect(formatYearRange('', '', 'Present')).toBe('')
   })
 
-  it('falls back to English for an invalid language tag', () => {
-    expect(formatYearMonth('2021-03', 'not a tag')).toBe('Mar 2021')
-  })
-
-  it('formats letter dates in the given language', () => {
+  it('formats letter dates in the given language, falling back to English', () => {
     expect(formatLetterDate(new Date(2026, 9, 29), 'da')).toBe('29. oktober 2026')
     expect(formatLetterDate(new Date(2026, 9, 29), 'en')).toBe('October 29, 2026')
+    expect(formatLetterDate(new Date(2026, 9, 29), 'not a tag')).toBe('October 29, 2026')
   })
 
   it('escapeHtml escapes quotes too', () => {
@@ -83,37 +189,71 @@ describe('format', () => {
 })
 
 describe('renderLetterHtml', () => {
-  it('renders localized date, paragraphs and signature', () => {
-    const letter = sampleLetter()
-    const html = renderLetterHtml(sampleProfile(), letter, { language: 'da', company: 'Acme', date: new Date(2026, 9, 29) })
-    expect(html).toContain('29. oktober 2026')
+  const render = (letter = sampleLetter()): string =>
+    renderLetterHtml(sampleProfile(), letter, { language: 'da', date: new Date(2026, 9, 29) })
+  /** Everything after the header, one element per line. */
+  const afterHeader = (html: string): string[] =>
+    html.slice(html.indexOf('</header>') + '</header>'.length, html.indexOf('</body>')).trim().split('\n')
+
+  it('starts with the same name-and-contact header as the CV', () => {
+    const header = (html: string): string | undefined => /<header>.*?<\/header>/s.exec(html)?.[0]
+    expect(header(render())).toContain('jane@example.com')
+    expect(header(render())).toBe(header(renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })))
+  })
+
+  it('follows the header with the localized date, greeting, paragraphs, sign-off and name', () => {
+    const html = render()
     expect(html).toContain('<html lang="da">')
-    expect(html).toContain(escapeHtml(letter.subject))
-    for (const p of letter.paragraphs) expect(html).toContain(`<p>${escapeHtml(p)}</p>`)
-    const signOffAt = html.indexOf('Kind regards,')
-    expect(signOffAt).toBeGreaterThan(-1)
-    expect(html.indexOf('Jane Doe', signOffAt)).toBeGreaterThan(signOffAt)
-    expect(html).toContain('Acme')
+    expect(afterHeader(html)).toEqual([
+      '<div class="date">29. oktober 2026</div>',
+      '<p>Dear Hiring Manager,</p>',
+      '<p>I am applying for the Data Engineer position at Acme.</p>',
+      '<p>At Ørsted I built batch and streaming pipelines in Python.</p>',
+      '<p>I would welcome the chance to discuss how I can help your team.</p>',
+      '<p>Kind regards,</p>',
+      '<p>Jane Doe</p>'
+    ])
+  })
+
+  it('leaves out an empty greeting or sign-off and escapes HTML', () => {
+    const html = render({ ...sampleLetter(), greeting: '', signOff: '', paragraphs: ['<b>A & B</b>'] })
+    expect(afterHeader(html)).toEqual([
+      '<div class="date">29. oktober 2026</div>',
+      '<p>&lt;b&gt;A &amp; B&lt;/b&gt;</p>',
+      '<p>Jane Doe</p>'
+    ])
   })
 })
 
-describe('links in the CV', () => {
-  it('adds https:// to scheme-less links and never emits other schemes', () => {
+describe('the website link in the contact line', () => {
+  const contactWith = (website: string): string => {
     const profile = sampleProfile()
-    profile.personal.links = [
-      { label: 'LinkedIn', url: 'linkedin.com/in/jane' },
-      { label: 'Evil', url: 'javascript:alert(1)' },
-      { label: 'Mail', url: 'mailto:jane@example.com' },
-      { label: 'Site', url: 'https://jane.dev' }
-    ]
-    profile.projects[0].url = 'github.com/janedoe/etl'
-    const cv = { ...sampleCv(), projects: [{ id: 'proj_01', name: 'ETL', context: '', bullets: [] }] }
-    const html = renderCvHtml(profile, cv, { language: 'en' })
-    expect(html).toContain('href="https://linkedin.com/in/jane"')
-    expect(html).toContain('href="mailto:jane@example.com"')
-    expect(html).toContain('href="https://jane.dev"')
-    expect(html).toContain('href="https://github.com/janedoe/etl"')
-    expect(html).not.toContain('javascript:')
-    expect(html).toContain('Evil')
+    profile.personal.website = website
+    return contactLine(renderCvHtml(profile, sampleCv(), { language: 'en' }))
+  }
+  const BASE = 'Copenhagen, Denmark | +45 12 34 56 78 | jane@example.com'
+
+  it('links to what was pasted and shows it without https://, www. or a trailing slash', () => {
+    expect(contactWith('https://www.google.com/')).toBe(`${BASE} | <a href="https://www.google.com/">google.com</a>`)
+    expect(contactWith('https://jane.dev/work')).toBe(`${BASE} | <a href="https://jane.dev/work">jane.dev/work</a>`)
+  })
+
+  it('adds https:// to a pasted address without a scheme, ignoring surrounding spaces', () => {
+    expect(contactWith('  jane.dev ')).toBe(`${BASE} | <a href="https://jane.dev">jane.dev</a>`)
+  })
+
+  it('leaves no separator behind when no website is entered', () => {
+    expect(contactWith('')).toBe(BASE)
+    expect(contactWith('   ')).toBe(BASE)
+  })
+
+  it('leaves out an address with another scheme entirely', () => {
+    expect(contactWith('javascript:alert(1)')).toBe(BASE)
+  })
+
+  it('is on the letter too', () => {
+    const profile = sampleProfile()
+    const html = renderLetterHtml(profile, sampleLetter(), { language: 'en', date: new Date(2026, 0, 1) })
+    expect(contactLine(html)).toContain('<a href="https://jane.dev/">jane.dev</a>')
   })
 })

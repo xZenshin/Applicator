@@ -1,0 +1,387 @@
+/*
+ * Applicator's look, after Kensaku's design system (kensaku/src/App.css): Apple neutrals with no accent hue,
+ * Inter for the interface, JetBrains Mono for small labels, hairline edges and small, even corner radii.
+ * Selection and primary actions are graphite; the one hue is the blue keyboard focus ring.
+ *
+ * Dark is the default finish, so :root holds the dark tokens and the light ones apply only once chosen.
+ * theme.ts maps Mantine's own variables onto these tokens.
+ */
+
+:root,
+[data-mantine-color-scheme='dark'] {
+  color-scheme: dark;
+  --k-bg: #0b0b0c;
+  --k-panel: #1c1c1e;
+  --k-fg: #f5f5f7;
+  --k-muted: #98989d;
+  --k-subtle: #636366;
+  --k-line: rgba(255, 255, 255, 0.08);
+  --k-line-strong: rgba(255, 255, 255, 0.16);
+  --k-soft: rgba(255, 255, 255, 0.06);
+  --k-soft-hover: rgba(255, 255, 255, 0.1);
+  --k-ink-soft: rgba(255, 255, 255, 0.12);
+  --k-control: #2c2c2e;
+  --k-control-edge: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --k-control-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  --k-control-active: #3a3a3c;
+  --k-shadow-float: 0 1px 2px rgb(0 0 0 / 0.5), 0 16px 40px -10px rgb(0 0 0 / 0.7);
+  --k-blue: #0a84ff;
+  --k-success: #30d158;
+  --k-warning: #ff9f0a;
+  --k-danger: #ff453a;
+}
+
+[data-mantine-color-scheme='light'] {
+  color-scheme: light;
+  --k-bg: #fbfbfd;
+  --k-panel: #ffffff;
+  --k-fg: #1d1d1f;
+  --k-muted: #6e6e73;
+  --k-subtle: #a1a1a6;
+  --k-line: rgba(0, 0, 0, 0.08);
+  --k-line-strong: rgba(0, 0, 0, 0.16);
+  --k-soft: rgba(0, 0, 0, 0.045);
+  --k-soft-hover: rgba(0, 0, 0, 0.075);
+  --k-ink-soft: rgba(0, 0, 0, 0.08);
+  --k-control: #ffffff;
+  --k-control-edge: inset 0 0 0 1px rgba(0, 0, 0, 0.07);
+  --k-control-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -8px rgb(0 0 0 / 0.14);
+  --k-control-active: #ffffff;
+  --k-shadow-float: 0 1px 2px rgb(0 0 0 / 0.05), 0 10px 30px -10px rgb(0 0 0 / 0.16);
+  --k-blue: #0071e3;
+  --k-success: #248a3d;
+  --k-warning: #b25000;
+  --k-danger: #d70015;
+}
+
+:root {
+  --k-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --k-dur-quick: 160ms;
+  --k-dur-base: 280ms;
+}
+
+/* ---------- Base ---------- */
+
+html,
+body {
+  background: var(--k-bg);
+}
+
+body {
+  letter-spacing: -0.006em;
+  font-feature-settings: 'cv11', 'ss03', 'cv05';
+  transition: background-color var(--k-dur-base) var(--k-ease), color var(--k-dur-base) var(--k-ease);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  letter-spacing: -0.03em;
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--k-blue) 70%, transparent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--k-ink-soft);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background-color: var(--k-line-strong);
+}
+
+/* Small monospace labels: "optional", timings, counts. */
+.k-meta {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--k-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.k-lead {
+  font-size: 15px;
+  line-height: 22px;
+  letter-spacing: -0.012em;
+  color: var(--k-muted);
+}
+
+/* ---------- Shell: a quiet sidebar beside one raised panel ---------- */
+
+.k-sidebar {
+  background: var(--k-bg);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 12px 12px;
+}
+
+.k-brand {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--k-fg);
+  padding: 0 10px 18px;
+}
+
+.k-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  color: var(--k-muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color var(--k-dur-quick) var(--k-ease), background-color var(--k-dur-quick) var(--k-ease);
+}
+.k-nav-item svg {
+  color: var(--k-subtle);
+  flex-shrink: 0;
+}
+.k-nav-item:hover {
+  color: var(--k-fg);
+}
+.k-nav-item.active {
+  background: var(--k-control);
+  box-shadow: var(--k-control-edge), var(--k-control-shadow);
+  color: var(--k-fg);
+  font-weight: 500;
+}
+.k-nav-item.active svg {
+  color: var(--k-fg);
+}
+
+.k-sidebar-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-left: 10px;
+}
+
+.k-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--k-muted);
+}
+.k-status:hover {
+  color: var(--k-fg);
+}
+.k-status span:last-child {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.k-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  background: var(--k-subtle);
+}
+.k-dot[data-state='ok'] {
+  background: color-mix(in srgb, var(--k-success) 75%, transparent);
+}
+.k-dot[data-state='problem'] {
+  background: var(--k-warning);
+}
+.k-dot[data-state='working'] {
+  background: var(--k-fg);
+  animation: k-pulse 1.6s ease-in-out infinite;
+}
+@keyframes k-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.k-main {
+  background: var(--k-bg);
+}
+
+.k-panel {
+  margin: 8px 8px 8px 0;
+  min-height: calc(100vh - 16px);
+  padding: 28px 32px 48px;
+  background: var(--k-panel);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--k-line);
+}
+
+/* ---------- Mantine components, in Kensaku's terms ---------- */
+
+/* Fields: a soft fill with a hairline, and a quiet graphite ring on focus. */
+.mantine-Input-input[data-variant='default'] {
+  --input-bg: var(--k-soft);
+  --input-bd: var(--k-line);
+  --input-bd-focus: var(--k-line-strong);
+  transition: box-shadow var(--k-dur-quick) var(--k-ease), border-color var(--k-dur-quick) var(--k-ease);
+}
+.mantine-Input-input[data-variant='default']:focus,
+.mantine-Input-input[data-variant='default']:focus-within {
+  box-shadow: 0 0 0 4px var(--k-ink-soft);
+}
+.mantine-InputWrapper-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.mantine-InputWrapper-description {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--k-muted);
+  margin-bottom: 6px;
+}
+
+.mantine-Button-root {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: background-color var(--k-dur-quick) var(--k-ease), opacity var(--k-dur-quick) var(--k-ease), transform 120ms var(--k-ease);
+}
+.mantine-Button-root:active:not(:disabled):not([data-disabled]) {
+  transform: scale(0.97);
+}
+
+/* A card is the panel's own material with a hairline edge, in both finishes (Mantine lifts it in dark mode). */
+.mantine-Card-root,
+.mantine-Paper-root {
+  background-color: var(--k-panel);
+}
+.mantine-Card-root,
+.mantine-Paper-root[data-with-border] {
+  border-color: var(--k-line);
+}
+
+/* Alerts keep their meaning as a faint tint and edge of their colour, not a solid coloured block. */
+.mantine-Alert-root {
+  background-color: color-mix(in srgb, var(--alert-bg) 50%, transparent);
+  border: 1px solid var(--alert-bg);
+}
+.mantine-Alert-message {
+  color: var(--k-fg);
+}
+
+.mantine-Divider-root {
+  --divider-color: var(--k-line);
+}
+
+/* Badges read as small monospace tags, not coloured pills. */
+.mantine-Badge-root {
+  font-family: var(--mantine-font-family-monospace);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  border-radius: 4px;
+}
+.mantine-Badge-root[data-variant='outline'] {
+  border-color: var(--k-line-strong);
+  color: var(--k-muted);
+}
+
+/* Tabs and segmented choices: selection is weight and a soft fill, not a coloured pill. */
+.mantine-Tabs-list {
+  gap: 2px;
+}
+.mantine-Tabs-tab {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--k-muted);
+  border-radius: 6px;
+}
+.mantine-Tabs-tab:hover {
+  color: var(--k-fg);
+  background: transparent;
+}
+.mantine-Tabs-tab[data-active],
+.mantine-Tabs-tab[data-active]:hover {
+  background: var(--k-soft);
+  color: var(--k-fg);
+  font-weight: 550;
+}
+
+.mantine-SegmentedControl-root {
+  background: var(--k-soft);
+  box-shadow: inset 0 0 0 1px var(--k-line);
+  padding: 2px;
+}
+.mantine-SegmentedControl-indicator {
+  background: var(--k-control-active);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), inset 0 0 0 1px var(--k-line);
+}
+.mantine-SegmentedControl-label {
+  font-weight: 500;
+  color: var(--k-muted);
+}
+.mantine-SegmentedControl-label[data-active],
+.mantine-SegmentedControl-control:hover .mantine-SegmentedControl-label {
+  color: var(--k-fg);
+}
+
+/* Graphite controls are white in dark mode, so what sits on them flips to the background colour. */
+.mantine-Checkbox-root {
+  --checkbox-icon-color: var(--mantine-primary-color-contrast);
+}
+.mantine-Switch-input:checked + .mantine-Switch-track .mantine-Switch-thumb {
+  background: var(--mantine-primary-color-contrast);
+  border-color: var(--mantine-primary-color-contrast);
+}
+
+.mantine-Table-th {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--k-subtle);
+}
+.mantine-Table-table {
+  --table-border-color: var(--k-line);
+  --table-hover-color: var(--k-soft);
+}
+
+.mantine-Popover-dropdown,
+.mantine-Notification-root,
+.mantine-Select-dropdown,
+.mantine-Combobox-dropdown {
+  border-color: var(--k-line);
+  box-shadow: var(--k-shadow-float);
+}
+
+.mantine-Tooltip-tooltip {
+  font-size: 12px;
+}

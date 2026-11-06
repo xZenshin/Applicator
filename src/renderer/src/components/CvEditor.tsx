@@ -5,29 +5,21 @@ import type { ProfileItem } from '../lib/profile-edit'
 import { SECTION_TITLES, itemLabel } from '../lib/profile-sections'
 import { LinesInput } from './LinesInput'
 
-const CV_FIELDS: Record<SectionKey, { key: string; label: string; kind: 'text' | 'lines' }[]> = {
-  experience: [
-    { key: 'title', label: 'Job title', kind: 'text' },
-    { key: 'bullets', label: 'Bullet points, one per line', kind: 'lines' }
-  ],
-  education: [
-    { key: 'degree', label: 'Degree', kind: 'text' },
-    { key: 'details', label: 'Details, one per line', kind: 'lines' }
-  ],
+const CV_FIELDS: Record<SectionKey, { key: string; label: string; kind: 'text' | 'textarea' | 'lines' }[]> = {
   skills: [
     { key: 'name', label: 'Skill', kind: 'text' },
     { key: 'category', label: 'Category', kind: 'text' }
   ],
-  languages: [
-    { key: 'name', label: 'Language', kind: 'text' },
-    { key: 'level', label: 'Level', kind: 'text' }
+  education: [{ key: 'degree', label: 'Title', kind: 'text' }],
+  experience: [
+    { key: 'title', label: 'Job title', kind: 'text' },
+    { key: 'bullets', label: 'Description: one line shows as a paragraph, several as bullet points', kind: 'lines' }
   ],
   projects: [
-    { key: 'name', label: 'Name', kind: 'text' },
-    { key: 'context', label: 'Context', kind: 'text' },
-    { key: 'bullets', label: 'Bullet points, one per line', kind: 'lines' }
-  ],
-  certifications: [{ key: 'name', label: 'Name', kind: 'text' }]
+    { key: 'name', label: 'Project name', kind: 'text' },
+    { key: 'technologies', label: 'Technologies', kind: 'text' },
+    { key: 'description', label: 'Short description', kind: 'textarea' }
+  ]
 }
 
 interface Props {
@@ -45,7 +37,6 @@ export function CvEditor(props: Props): React.JSX.Element {
 
   return (
     <Stack gap="lg">
-      <TextInput disabled={props.disabled} label="Headline" value={cv.headline} onChange={(e) => onChange({ ...cv, headline: e.currentTarget.value })} />
       <Textarea disabled={props.disabled} label="Summary" autosize minRows={3} value={cv.summary} onChange={(e) => onChange({ ...cv, summary: e.currentTarget.value })} />
 
       {SECTION_KEYS.filter((s) => profile[s].length > 0).map((section) => {
@@ -106,6 +97,21 @@ export function CvEditor(props: Props): React.JSX.Element {
                         />
                       ))}
                   </SimpleGrid>
+                  {CV_FIELDS[section]
+                    .filter((f) => f.kind === 'textarea')
+                    .map((f) => (
+                      <Textarea
+                        key={f.key}
+                        mt="xs"
+                        size="xs"
+                        autosize
+                        minRows={2}
+                        label={f.label}
+                        disabled={props.disabled}
+                        value={(entry as Record<string, unknown>)[f.key] as string}
+                        onChange={(e) => onChange(updateCvItem(cv, section, entry.id, { [f.key]: e.currentTarget.value }))}
+                      />
+                    ))}
                   {CV_FIELDS[section]
                     .filter((f) => f.kind === 'lines')
                     .map((f) => (

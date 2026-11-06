@@ -1,12 +1,13 @@
 import { BrowserWindow } from 'electron'
-import { PROGRESS_CHANNEL, type GenerationStage } from '../../shared/api'
+import { BUSY_CHANNEL, PROGRESS_CHANNEL, type GenerationStage } from '../../shared/api'
 import { AppError } from '../../shared/errors'
-import type { ApplicationLetter, CvContent } from '../../shared/types'
+import type { ApplicationLetter, CvContent, Highlight } from '../../shared/types'
 import { CLAUDE_MESSAGES, ClaudeError } from '../claude/errors'
 import { assertSubscriptionAuth } from '../connection'
 import { getDataDir, makeAppRunFn, requireClaudeCommand } from '../context'
 import { runCvRevision, runGeneration, runLetterRevision } from '../generation'
 import type { RunFn } from '../llm/run-fn'
+import { measureCvHeight } from '../pdf/measure'
 import { handle } from './handle'
 
 let current: AbortController | null = null
@@ -19,6 +20,7 @@ async function withClaude<T>(fn: (run: RunFn) => Promise<T>): Promise<T> {
   }
   const controller = new AbortController()
   current = controller
+  broadcast(BUSY_CHANNEL, true)
   try {
     if (!subscriptionVerified) {
       await assertSubscriptionAuth(await requireClaudeCommand())
@@ -28,33 +30,41 @@ async function withClaude<T>(fn: (run: RunFn) => Promise<T>): Promise<T> {
     return await fn(await makeAppRunFn(controller.signal))
   } finally {
     if (current === controller) current = null
+    broadcast(BUSY_CHANNEL, false)
   }
 }
 
-function broadcastStage(stage: GenerationStage): void {
-  for (const window of BrowserWindow.getAllWindows()) window.webContents.send(PROGRESS_CHANNEL, stage)
+function broadcast(channel: string, value: unknown): void {
+  for (const window of BrowserWindow.getAllWindows()) window.webContents.send(channel, value)
 }
 
+const broadcastStage = (stage: GenerationStage): void => broadcast(PROGRESS_CHANNEL, stage)
+
 export function registerLlmIpc(): void {
-  handle('llm:generate', (input: { jobDescription: string; instructions: string }) =>
+  handle('llm:generate', (input: { jobDescription: string; instructions: string; ownText?: string; cvOnly?: boolean }) =>
     withClaude(async (run) =>
       runGeneration({
         run,
         dataDir: await getDataDir(),
         jobDescription: String(input.jobDescription ?? ''),
         instructions: String(input.instructions ?? ''),
+        ownText: String(input.ownText ?? ''),
+        cvOnly: input.cvOnly === true,
+        measureCv: measureCvHeight,
         onStage: broadcastStage,
         now: new Date()
       })
     )
   )
 
-  handle('llm:reviseCv', (input: { id: string; cv: CvContent; instruction: string }) =>
+  handle('llm:reviseCv', (input: { id: string; cv: CvContent; instruction: string; highlight?: Highlight }) =>
     withClaude(async (run) => runCvRevision({ run, dataDir: await getDataDir(), ...input }))
   )
 
-  handle('llm:reviseLetter', (input: { id: string; cv: CvContent; letter: ApplicationLetter; instruction: string }) =>
-    withClaude(async (run) => runLetterRevision({ run, dataDir: await getDataDir(), ...input }))
+  handle(
+    'llm:reviseLetter',
+    (input: { id: string; cv: CvContent; letter: ApplicationLetter; instruction: string; highlight?: Highlight }) =>
+      withClaude(async (run) => runLetterRevision({ run, dataDir: await getDataDir(), ...input }))
   )
 
   handle('llm:cancel', async () => {

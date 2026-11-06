@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { ConnectionResult, SettingsView } from '../../../shared/api'
 import type { ClaudeSource, Settings } from '../../../shared/types'
 import { api, errorMessage } from '../api'
+import { useClaudeStatus } from '../hooks/useClaudeStatus'
 
 const SOURCE_LABELS: Record<ClaudeSource, string> = {
   settings: 'Settings',
@@ -25,6 +26,7 @@ export default function SettingsPage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
   const [test, setTest] = useState<ConnectionResult | null>(null)
+  const claudeStatus = useClaudeStatus()
 
   useEffect(() => {
     api.settings.get().then(
@@ -45,6 +47,7 @@ export default function SettingsPage(): React.JSX.Element {
       setView(next)
       setPathDraft(next.settings.claudePath)
       setTest(null)
+      claudeStatus.refresh()
     } catch (e) {
       setError(errorMessage(e))
     }
@@ -59,6 +62,7 @@ export default function SettingsPage(): React.JSX.Element {
       setTest({ ok: false, message: errorMessage(e) })
     } finally {
       setTesting(false)
+      claudeStatus.refresh()
     }
   }
 

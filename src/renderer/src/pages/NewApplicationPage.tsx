@@ -1,4 +1,4 @@
-import { Alert, Anchor, Button, Card, Group, Loader, Stack, Text, Textarea, Title } from '@mantine/core'
+import { Alert, Anchor, Button, Card, Group, Loader, SegmentedControl, Stack, Text, Textarea, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -8,9 +8,13 @@ import { api, errorKind, errorMessage } from '../api'
 
 const JOB_KEY = 'new.jobDescription'
 const INSTRUCTIONS_KEY = 'new.instructions'
+const OWN_TEXT_KEY = 'new.ownText'
+// Not cleared after generating: it is a choice, not content.
+const OUTPUT_KEY = 'new.output'
 
 const STAGE_TEXT: Record<GenerationStage, string> = {
   tailoring: 'Analyzing the job and tailoring your CV…',
+  fitting: 'Fitting your CV on one page…',
   writing: 'Writing your application…'
 }
 
@@ -30,6 +34,9 @@ export default function NewApplicationPage(): React.JSX.Element {
   const navigate = useNavigate()
   const [jobDescription, setJobDescription] = useSessionState(JOB_KEY)
   const [instructions, setInstructions] = useSessionState(INSTRUCTIONS_KEY)
+  const [ownText, setOwnText] = useSessionState(OWN_TEXT_KEY)
+  const [output, setOutput] = useSessionState(OUTPUT_KEY)
+  const cvOnly = output === 'cv'
   const [profileUsable, setProfileUsable] = useState<boolean | null>(null)
   const [running, setRunning] = useState(false)
   const [stage, setStage] = useState<GenerationStage | null>(null)
@@ -68,9 +75,10 @@ export default function NewApplicationPage(): React.JSX.Element {
     setElapsed(0)
     setRunning(true)
     try {
-      const meta = await api.llm.generate({ jobDescription, instructions })
+      const meta = await api.llm.generate({ jobDescription, instructions, ownText, cvOnly })
       sessionStorage.removeItem(JOB_KEY)
       sessionStorage.removeItem(INSTRUCTIONS_KEY)
+      sessionStorage.removeItem(OWN_TEXT_KEY)
       const path = `/review/${encodeURIComponent(meta.id)}`
       if (mounted.current) {
         navigate(path)
@@ -101,7 +109,29 @@ export default function NewApplicationPage(): React.JSX.Element {
 
   return (
     <Stack maw={980} gap="lg">
-      <Title order={2}>New application</Title>
+      <Stack gap={4}>
+        <Title order={2}>New application</Title>
+        <Text className="k-lead">Paste a job posting, and Claude tailors your CV and application to it.</Text>
+      </Stack>
+
+      <Stack gap={6}>
+        <SegmentedControl
+          w="fit-content"
+          value={cvOnly ? 'cv' : 'both'}
+          disabled={running}
+          onChange={setOutput}
+          data={[
+            { value: 'both', label: 'CV and application' },
+            { value: 'cv', label: 'CV only' }
+          ]}
+        />
+        {cvOnly && (
+          <Text size="sm" c="dimmed">
+            For jobs that only ask for a CV. The summary at the top becomes a longer introduction that also says why you
+            want the job.
+          </Text>
+        )}
+      </Stack>
 
       {profileUsable === false && (
         <Alert color="yellow" title="Your CV data is not ready">
@@ -124,7 +154,30 @@ export default function NewApplicationPage(): React.JSX.Element {
         onChange={(e) => setJobDescription(e.currentTarget.value)}
       />
       <Textarea
-        label="Extra instructions for this application (optional)"
+        label={
+          <>
+            Your own text <span className="k-meta">optional</span>
+          </>
+        }
+        description={
+          cvOnly
+            ? 'Something you have already written for this application, such as why you want the job. Claude builds the summary at the top of the CV on it and may polish the wording.'
+            : 'A section or a draft you have already written for this application. Claude works it into the letter and may polish the wording.'
+        }
+        placeholder={cvOnly ? 'Paste text you want in the CV’s summary…' : 'Paste text you want in the letter…'}
+        autosize
+        minRows={4}
+        maxRows={20}
+        value={ownText}
+        disabled={running}
+        onChange={(e) => setOwnText(e.currentTarget.value)}
+      />
+      <Textarea
+        label={
+          <>
+            Extra instructions for this application <span className="k-meta">optional</span>
+          </>
+        }
         placeholder="e.g. Emphasise my leadership experience. Mention that I'm relocating to Aarhus."
         autosize
         minRows={2}
@@ -139,9 +192,7 @@ export default function NewApplicationPage(): React.JSX.Element {
             <Group gap="sm">
               <Loader size="sm" />
               <Text>{stage ? STAGE_TEXT[stage] : 'Starting Claude…'}</Text>
-              <Text c="dimmed" size="sm">
-                {elapsed} s
-              </Text>
+              <span className="k-meta">{elapsed} s</span>
             </Group>
             <Button variant="default" onClick={() => api.llm.cancel()}>
               Cancel
@@ -150,12 +201,10 @@ export default function NewApplicationPage(): React.JSX.Element {
         </Card>
       ) : (
         <Group>
-          <Button size="md" onClick={generate} disabled={!profileUsable || !jobDescription.trim()}>
-            Generate CV and application
+          <Button onClick={generate} disabled={!profileUsable || !jobDescription.trim()}>
+            {cvOnly ? 'Generate CV' : 'Generate CV and application'}
           </Button>
-          <Text size="sm" c="dimmed">
-            Usually takes 1–2 minutes.
-          </Text>
+          <span className="k-meta">{cvOnly ? 'Usually under a minute' : 'Usually 1–2 min'}</span>
         </Group>
       )}
 

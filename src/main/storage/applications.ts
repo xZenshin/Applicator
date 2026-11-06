@@ -126,7 +126,7 @@ export async function saveDraft(
 export async function setExported(
   dataDir: string,
   id: string,
-  files: { cvPdf: string; letterPdf: string },
+  files: { cvPdf: string; letterPdf: string | null },
   now: Date
 ): Promise<ApplicationMeta> {
   const meta = await readMeta(dataDir, id)

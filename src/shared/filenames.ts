@@ -37,7 +37,7 @@ function pdfName(parts: string[]): string {
   return `${sanitizeFileName(stem, 150)}.pdf`
 }
 
-export function cvPdfName(fullName: string, company: string): string {
+export function cvPdfName(fullName: string, company = ''): string {
   return pdfName(['CV', fullName, company])
 }
 

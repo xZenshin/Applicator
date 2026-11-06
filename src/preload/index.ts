@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { ALL_CHANNELS, PROGRESS_CHANNEL, type Bridge, type GenerationStage } from '../shared/api'
+import { ALL_CHANNELS, BUSY_CHANNEL, PROGRESS_CHANNEL, type Bridge, type GenerationStage } from '../shared/api'
 
 const allowed = new Set(ALL_CHANNELS)
 
@@ -15,6 +15,13 @@ const bridge: Bridge = {
     ipcRenderer.on(PROGRESS_CHANNEL, listener)
     return () => {
       ipcRenderer.removeListener(PROGRESS_CHANNEL, listener)
+    }
+  },
+  onBusy: (cb) => {
+    const listener = (_event: unknown, busy: boolean): void => cb(busy)
+    ipcRenderer.on(BUSY_CHANNEL, listener)
+    return () => {
+      ipcRenderer.removeListener(BUSY_CHANNEL, listener)
     }
   }
 }

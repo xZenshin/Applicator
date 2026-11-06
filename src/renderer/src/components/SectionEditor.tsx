@@ -20,7 +20,7 @@ function Field(props: { field: FieldDescriptor; item: ProfileItem; onChange: Pro
   const set = (v: unknown): void => onChange(item.id, { [field.key]: v })
   switch (field.kind) {
     case 'text':
-      return <TextInput label={field.label} value={value as string} onChange={(e) => set(e.currentTarget.value)} />
+      return <TextInput label={field.label} placeholder={field.placeholder} value={value as string} onChange={(e) => set(e.currentTarget.value)} />
     case 'textarea':
       return <Textarea label={field.label} autosize minRows={2} value={value as string} onChange={(e) => set(e.currentTarget.value)} />
     case 'month':
@@ -40,6 +40,8 @@ function Field(props: { field: FieldDescriptor; item: ProfileItem; onChange: Pro
         </Stack>
       )
     }
+    case 'checkbox':
+      return <Checkbox mt={32} label={field.label} checked={value as boolean} onChange={(e) => set(e.currentTarget.checked)} />
     case 'lines':
       return <LinesInput label={field.label} value={value as string[]} resetKey={item.id} onChange={set} />
   }
@@ -89,7 +91,7 @@ export function SectionEditor(props: Props): React.JSX.Element {
               <ConfirmDelete question={`Delete "${itemLabel(section, item)}"?`} onConfirm={() => props.onRemove(item.id)} />
             </Group>
           </Group>
-          <SimpleGrid cols={compact ? 2 : 3} spacing="sm">
+          <SimpleGrid cols={Math.min(narrow.length, 3)} spacing="sm">
             {narrow.map((f) => (
               <Field key={f.key} field={f} item={item} onChange={props.onChange} />
             ))}

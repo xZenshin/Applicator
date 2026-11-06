@@ -8,6 +8,8 @@ export function RevisePanel(props: {
   onRevise: (instruction: string) => Promise<void>
   canUndo: boolean
   onUndo: () => void
+  /** Claude is working on another revision. */
+  busy?: boolean
 }): React.JSX.Element {
   const [instruction, setInstruction] = useState('')
   const [running, setRunning] = useState(false)
@@ -34,11 +36,12 @@ export function RevisePanel(props: {
         <TextInput
           style={{ flex: 1 }}
           label="Ask Claude for changes"
+          description="To change just one part, highlight it in the editor or the preview."
           placeholder="Tell Claude what to change… (e.g. Make it shorter)"
           value={instruction}
           disabled={running}
           onChange={(e) => setInstruction(e.currentTarget.value)}
-          onKeyDown={(e) => e.key === 'Enter' && void revise()}
+          onKeyDown={(e) => e.key === 'Enter' && !props.busy && void revise()}
         />
         {running ? (
           <>
@@ -52,7 +55,7 @@ export function RevisePanel(props: {
           </>
         ) : (
           <>
-            <Button onClick={revise} disabled={!instruction.trim()}>
+            <Button onClick={revise} disabled={!instruction.trim() || props.busy}>
               Revise
             </Button>
             <Button variant="default" onClick={props.onUndo} disabled={!props.canUndo}>

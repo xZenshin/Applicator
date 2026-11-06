@@ -1,6 +1,8 @@
-import { AppShell, MantineProvider, NavLink, Title } from '@mantine/core'
+import { AppShell, MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { HashRouter, Navigate, NavLink as RouterNavLink, Route, Routes, useParams } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { Sidebar } from './components/Sidebar'
+import { ClaudeStatusProvider } from './hooks/useClaudeStatus'
 import NewApplicationPage from './pages/NewApplicationPage'
 import ReviewPage from './pages/ReviewPage'
 import HistoryPage from './pages/HistoryPage'
@@ -8,6 +10,7 @@ import HistoryDetailPage from './pages/HistoryDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import StylePage from './pages/StylePage'
 import SettingsPage from './pages/SettingsPage'
+import { cssVariablesResolver, theme } from './theme'
 
 // Keyed by id: switching from one application to another must never reuse the previous one's state.
 function ReviewRoute(): React.JSX.Element {
@@ -18,32 +21,19 @@ function HistoryDetailRoute(): React.JSX.Element {
   return <HistoryDetailPage key={useParams().id} />
 }
 
-const NAV = [
-  { to: '/new', label: 'New application' },
-  { to: '/history', label: 'History' },
-  { to: '/profile', label: 'My CV' },
-  { to: '/style', label: 'Writing style' },
-  { to: '/settings', label: 'Settings' }
-]
-
 function App(): React.JSX.Element {
   return (
-    <MantineProvider>
+    <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver} defaultColorScheme="dark">
       <Notifications position="top-right" />
       <HashRouter>
-        <AppShell navbar={{ width: 220, breakpoint: 0 }} padding="lg">
-          <AppShell.Navbar p="sm">
-            <Title order={4} px="sm" py="md">
-              Applicator
-            </Title>
-            {NAV.map((item) => (
-              <RouterNavLink key={item.to} to={item.to} style={{ textDecoration: 'none' }}>
-                {({ isActive }) => <NavLink component="span" label={item.label} active={isActive} />}
-              </RouterNavLink>
-            ))}
-          </AppShell.Navbar>
-          <AppShell.Main>
-            <Routes>
+        <ClaudeStatusProvider>
+          <AppShell navbar={{ width: 216, breakpoint: 0 }} padding={0} withBorder={false}>
+            <AppShell.Navbar className="k-sidebar">
+              <Sidebar />
+            </AppShell.Navbar>
+            <AppShell.Main className="k-main">
+              <div className="k-panel">
+                <Routes>
               <Route path="/" element={<Navigate to="/new" replace />} />
               <Route path="/new" element={<NewApplicationPage />} />
               <Route path="/review/:id" element={<ReviewRoute />} />
@@ -52,9 +42,11 @@ function App(): React.JSX.Element {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/style" element={<StylePage />} />
               <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </AppShell.Main>
-        </AppShell>
+                </Routes>
+              </div>
+            </AppShell.Main>
+          </AppShell>
+        </ClaudeStatusProvider>
       </HashRouter>
     </MantineProvider>
   )
