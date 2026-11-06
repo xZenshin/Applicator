@@ -25,7 +25,7 @@ import {
   type CvOnlyContext
 } from './prompts'
 import type { RunFn } from './run-fn'
-import { normalizeLanguage, sanitizeCv } from './sanitize'
+import { normalizeLanguage, restoreAlwaysIncluded, sanitizeCv } from './sanitize'
 import { TailorOutputSchema } from './schemas'
 
 /** Renders the CV as it will be printed and returns its height in pixels at 96 dpi. */
@@ -57,8 +57,9 @@ async function fitOnePage(a: {
     }
     a.onStage('fitting')
     const revised = await reviseCv({ ...a, cv, instruction: fitOnePageInstruction(over, Boolean(a.cvOnly)) })
-    cv = revised.cv
-    warnings.push(...revised.warnings)
+    const restored = restoreAlwaysIncluded(a.profile, revised.cv)
+    cv = restored.cv
+    warnings.push(...revised.warnings, ...restored.warnings)
   }
 }
 
@@ -85,16 +86,18 @@ export async function generateApplication(a: {
     schema: TailorOutputSchema
   })
   const sanitized = sanitizeCv(a.profile, tailored.cv)
-  const warnings = sanitized.warnings
+  const restored = restoreAlwaysIncluded(a.profile, sanitized.cv)
+  const warnings = [...sanitized.warnings, ...restored.warnings]
   const language = normalizeLanguage(tailored.job.language)
   if (language.warning) warnings.push(language.warning)
   const job = { ...tailored.job, language: language.language }
 
-  let cv = sanitized.cv
+  let cv = restored.cv
   if (a.measureCv) {
     const fitted = await fitOnePage({ ...a, job, cv, cvOnly, measureCv: a.measureCv })
     cv = fitted.cv
-    warnings.push(...fitted.warnings)
+    // Both shortening rounds can leave out the same job; say so once.
+    for (const w of fitted.warnings) if (!warnings.includes(w)) warnings.push(w)
   }
   if (a.cvOnly) return { job, cv, letter: null, warnings }
 

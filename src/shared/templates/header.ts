@@ -2,9 +2,12 @@ import type { Personal } from '../types'
 import { escapeHtml as e } from './escape'
 import { safeHref } from './url'
 
-function anchor(url: string, text: string): string {
+/** Links to the website, showing "https://www.jane.dev/" as "jane.dev". An address that can't be linked is left out. */
+function websiteLink(url: string): string {
   const href = safeHref(url)
-  return href ? `<a href="${e(href)}">${e(text)}</a>` : e(text)
+  if (!href) return ''
+  const shown = href.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '')
+  return `<a href="${e(href)}">${e(shown)}</a>`
 }
 
 /** "Anna Marie Jensen" → "Anna Marie<br>Jensen": the last name gets its own line. */
@@ -15,7 +18,6 @@ function nameLines(fullName: string): string {
 
 /** The name, with the contact line to its right: the top of both the CV and the letter. */
 export function renderHeader(personal: Personal): string {
-  const links = personal.links.filter((l) => l.url || l.label).map((l) => anchor(l.url, l.label || l.url))
-  const contact = [e(personal.location), e(personal.phone), e(personal.email), ...links].filter(Boolean).join(' | ')
+  const contact = [e(personal.location), e(personal.phone), e(personal.email), websiteLink(personal.website)].filter(Boolean).join(' | ')
   return `<header><h1>${nameLines(personal.fullName)}</h1>${contact ? `<div class="contact">${contact}</div>` : ''}</header>`
 }

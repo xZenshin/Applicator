@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Card, CloseButton, Divider, Grid, Group, Loader, SimpleGrid, Stack, Text, TextInput, Textarea, Title } from '@mantine/core'
+import { Alert, Box, Button, Card, Divider, Grid, Group, Loader, SimpleGrid, Stack, Text, TextInput, Textarea, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
@@ -11,11 +11,12 @@ import { useAutosave } from '../hooks/useAutosave'
 import { addItem, moveItem, removeItem, updateItem, type ProfileItem } from '../lib/profile-edit'
 import { profileCvHtml } from '../lib/render'
 
-const PERSONAL_FIELDS: { key: Exclude<keyof Personal, 'links'>; label: string }[] = [
+const PERSONAL_FIELDS: { key: keyof Personal; label: string; placeholder?: string }[] = [
   { key: 'fullName', label: 'Full name' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
-  { key: 'location', label: 'Location (city, country)' }
+  { key: 'location', label: 'Location (city, country)' },
+  { key: 'website', label: 'Website', placeholder: 'Paste the link to your site' }
 ]
 
 export default function ProfilePage(): React.JSX.Element {
@@ -38,7 +39,6 @@ export default function ProfilePage(): React.JSX.Element {
   const update = (fn: (p: Profile) => Profile): void => setProfile((p) => (p ? fn(p) : p))
   const setPersonal = (patch: Partial<Personal>): void =>
     update((p) => ({ ...p, personal: { ...p.personal, ...patch } }))
-  const links = profile.personal.links
 
   const downloadPdf = async (): Promise<void> => {
     setExporting(true)
@@ -104,42 +104,12 @@ export default function ProfilePage(): React.JSX.Element {
                 <TextInput
                   key={f.key}
                   label={f.label}
+                  placeholder={f.placeholder}
                   value={profile.personal[f.key]}
                   onChange={(e) => setPersonal({ [f.key]: e.currentTarget.value })}
                 />
               ))}
             </SimpleGrid>
-            <Text size="sm" fw={500} mt="md" mb={4}>
-              Links
-            </Text>
-            <Stack gap="xs">
-              {links.map((link, i) => (
-                <Group key={i} wrap="nowrap" gap="xs">
-                  <TextInput
-                    placeholder="Label (e.g. LinkedIn)"
-                    value={link.label}
-                    w={200}
-                    onChange={(e) =>
-                      setPersonal({ links: links.map((l, j) => (j === i ? { ...l, label: e.currentTarget.value } : l)) })
-                    }
-                  />
-                  <TextInput
-                    placeholder="https://…"
-                    value={link.url}
-                    style={{ flex: 1 }}
-                    onChange={(e) =>
-                      setPersonal({ links: links.map((l, j) => (j === i ? { ...l, url: e.currentTarget.value } : l)) })
-                    }
-                  />
-                  <CloseButton aria-label="Remove link" onClick={() => setPersonal({ links: links.filter((_, j) => j !== i) })} />
-                </Group>
-              ))}
-              <Group>
-                <Button variant="light" size="xs" onClick={() => setPersonal({ links: [...links, { label: '', url: '' }] })}>
-                  Add link
-                </Button>
-              </Group>
-            </Stack>
           </Card>
 
           <Textarea

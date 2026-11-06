@@ -10,8 +10,8 @@ describe('addItem', () => {
     const second = addItem(first.profile, 'experience')
     expect([first.id, second.id]).toEqual(['exp_01', 'exp_02'])
     expect(second.profile.experience).toEqual([
-      { id: 'exp_01', title: '', employer: '', location: '', start: '', end: '', bullets: [] },
-      { id: 'exp_02', title: '', employer: '', location: '', start: '', end: '', bullets: [] }
+      { id: 'exp_01', title: '', employer: '', location: '', start: '', end: '', bullets: [], alwaysInclude: false },
+      { id: 'exp_02', title: '', employer: '', location: '', start: '', end: '', bullets: [], alwaysInclude: false }
     ])
   })
 

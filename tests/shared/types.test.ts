@@ -22,6 +22,22 @@ describe('data shapes', () => {
     expect(parsed).not.toHaveProperty('languages')
   })
 
+  it('reads a profile saved before the single website link, dropping the old list of links', () => {
+    const current = sampleProfile()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { website, ...oldPersonal } = current.personal
+    const parsed = ProfileSchema.parse({ ...current, personal: { ...oldPersonal, links: [{ label: 'LinkedIn', url: 'https://x.dk' }] } })
+    expect(parsed.personal.website).toBe('')
+    expect(parsed.personal).not.toHaveProperty('links')
+  })
+
+  it('reads a job saved before it could be marked to always include as not marked', () => {
+    const current = sampleProfile()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { alwaysInclude, ...oldJob } = current.experience[0]
+    expect(ProfileSchema.parse({ ...current, experience: [oldJob] }).experience[0].alwaysInclude).toBe(false)
+  })
+
   it('reads a profile saved before projects and the shorter education entries', () => {
     const current = sampleProfile()
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

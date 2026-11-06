@@ -202,6 +202,40 @@ describe('short education and projects', () => {
   })
 })
 
+describe('work that is both a job and a project', () => {
+  it('every CV prompt says to keep it under the job and not repeat it as a project', async () => {
+    const prompts = await import('../../src/main/llm/prompts')
+    for (const prompt of [prompts.TAILOR_SYSTEM, prompts.CV_REVISE_SYSTEM, prompts.CV_ONLY_TAILOR_SYSTEM, prompts.CV_ONLY_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/same work as a job on the CV/)
+    }
+  })
+
+  it('lets a requested change put such a project on the CV anyway', async () => {
+    const { CV_REVISE_SYSTEM, CV_ONLY_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    for (const prompt of [CV_REVISE_SYSTEM, CV_ONLY_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/requested change takes priority over .*rule 12/i)
+    }
+  })
+})
+
+describe('jobs marked to always include', () => {
+  it('every CV prompt says to keep them, and shows Claude which they are', async () => {
+    const prompts = await import('../../src/main/llm/prompts')
+    for (const prompt of [prompts.TAILOR_SYSTEM, prompts.CV_REVISE_SYSTEM, prompts.CV_ONLY_TAILOR_SYSTEM, prompts.CV_ONLY_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/alwaysInclude: true must be on the CV/)
+    }
+    const profile = sampleProfile()
+    profile.experience[1].alwaysInclude = true
+    expect(buildTailorInput({ profile, jobDescription: JOB_TEXT, instructions: '' })).toContain('"alwaysInclude": true')
+  })
+
+  it('a requested change can remove them, but the request to shorten says to keep them', async () => {
+    const { CV_REVISE_SYSTEM } = await import('../../src/main/llm/prompts')
+    expect(CV_REVISE_SYSTEM).toMatch(/requested change takes priority over .*rule 13/i)
+    expect(fitOnePageInstruction(3)).toMatch(/Keep every job marked alwaysInclude/)
+  })
+})
+
 describe('one-page CVs', () => {
   it('every CV prompt says the CV must fit on one A4 page', async () => {
     const prompts = await import('../../src/main/llm/prompts')

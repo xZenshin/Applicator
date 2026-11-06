@@ -22,7 +22,7 @@ export const PersonalSchema = z.object({
   email: z.string(),
   phone: z.string(),
   location: z.string(),
-  links: z.array(z.object({ label: z.string(), url: z.string() }))
+  website: z.string().default('')
 })
 export type Personal = z.infer<typeof PersonalSchema>
 
@@ -33,7 +33,9 @@ export const ExperienceItemSchema = z.object({
   location: z.string(),
   start: OptionalYearMonth,
   end: EndDate,
-  bullets: z.array(z.string())
+  bullets: z.array(z.string()),
+  /** Goes on every tailored CV, however relevant it is to the posting. */
+  alwaysInclude: z.boolean().default(false)
 })
 export type ExperienceItem = z.infer<typeof ExperienceItemSchema>
 
@@ -82,7 +84,7 @@ export type Profile = z.infer<typeof ProfileSchema>
 export function emptyProfile(): Profile {
   return {
     version: 1,
-    personal: { fullName: '', email: '', phone: '', location: '', links: [] },
+    personal: { fullName: '', email: '', phone: '', location: '', website: '' },
     summary: '',
     experience: [],
     education: [],

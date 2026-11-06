@@ -1,7 +1,7 @@
 import type { SectionKey } from '../../../shared/types'
 import type { ProfileItem } from './profile-edit'
 
-export type FieldKind = 'text' | 'textarea' | 'month' | 'monthOrPresent' | 'lines'
+export type FieldKind = 'text' | 'textarea' | 'month' | 'monthOrPresent' | 'lines' | 'checkbox'
 export interface FieldDescriptor {
   key: string
   label: string
@@ -31,6 +31,7 @@ export const SECTION_FIELDS: Record<SectionKey, FieldDescriptor[]> = {
     { key: 'location', label: 'Location', kind: 'text' },
     { key: 'start', label: 'Start', kind: 'month' },
     { key: 'end', label: 'End', kind: 'monthOrPresent' },
+    { key: 'alwaysInclude', label: 'Always include on the CV', kind: 'checkbox' },
     { key: 'bullets', label: 'Description: one line shows as a paragraph, several as bullet points', kind: 'lines' }
   ],
   education: [

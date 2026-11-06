@@ -86,6 +86,54 @@ describe('generateApplication', () => {
   })
 })
 
+describe('jobs marked to always include', () => {
+  const marked = (): Profile => {
+    const profile = sampleProfile()
+    profile.experience[1].alwaysInclude = true
+    return profile
+  }
+  const args = (run: RunFn, measureCv?: MeasureCv): Parameters<typeof generateApplication>[0] => ({
+    run,
+    profile: marked(),
+    style: sampleStyle(),
+    jobDescription: JOB_TEXT,
+    instructions: '',
+    measureCv,
+    onStage: () => {}
+  })
+  // sampleCv only has exp_01, so these answers leave out the marked exp_02.
+  const tailored = { job: sampleJob(), cv: sampleCv() }
+
+  it('are put back when tailoring leaves them out, before the letter is written from the CV', async () => {
+    const { run, calls } = fakeRun({ [TAILOR_SYSTEM]: tailored, [LETTER_SYSTEM]: sampleLetter() })
+    const out = await generateApplication(args(run))
+    expect(out.cv.experience.map((e) => e.id)).toEqual(['exp_01', 'exp_02'])
+    expect(out.warnings.join(' ')).toContain('Junior Developer @ Contoso ApS')
+    expect(calls[1].input).toContain('"id": "exp_02",\n      "title": "Junior Developer"')
+  })
+
+  it('are put back when shortening to one page leaves them out, and that CV is what gets measured', async () => {
+    const withBoth = { ...sampleCv(), experience: [...sampleCv().experience, { id: 'exp_02', title: 'Udvikler', bullets: ['Kort'] }] }
+    const { run } = fakeRun({ [TAILOR_SYSTEM]: { job: sampleJob(), cv: withBoth }, [CV_REVISE_SYSTEM]: sampleCv(), [LETTER_SYSTEM]: sampleLetter() })
+    const measured: string[][] = []
+    const heights = [1300, 1100]
+    const measureCv: MeasureCv = async (_p, cv) => {
+      measured.push(cv.experience.map((e) => e.id))
+      return heights.shift() ?? 1100
+    }
+    const out = await generateApplication(args(run, measureCv))
+    expect(measured).toEqual([['exp_01', 'exp_02'], ['exp_01', 'exp_02']])
+    expect(out.cv.experience.map((e) => e.id)).toEqual(['exp_01', 'exp_02'])
+  })
+
+  it('stay out when a revision you asked for removes them', async () => {
+    const { run } = fakeRun({ [CV_REVISE_SYSTEM]: sampleCv() })
+    const out = await reviseCv({ run, profile: marked(), jobDescription: JOB_TEXT, job: sampleJob(), cv: sampleCv(), instruction: 'Remove the Contoso job' })
+    expect(out.cv.experience.map((e) => e.id)).toEqual(['exp_01'])
+    expect(out.warnings).toEqual([])
+  })
+})
+
 describe('fitting the CV on one page', () => {
   const PAGE = 1123
   /** A stand-in for rendering the CV: returns these heights in turn, then a height that fits. */

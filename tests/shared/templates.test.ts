@@ -35,10 +35,10 @@ describe('renderCvHtml', () => {
     expect(named('Cher')).toBe('Cher')
   })
 
-  it('lists location, phone, email and links separated by bars', () => {
+  it('lists location, phone, email and website separated by bars', () => {
     const html = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
     expect(contactLine(html)).toBe(
-      'Copenhagen, Denmark | +45 12 34 56 78 | jane@example.com | <a href="https://linkedin.com/in/janedoe">LinkedIn</a>'
+      'Copenhagen, Denmark | +45 12 34 56 78 | jane@example.com | <a href="https://jane.dev/">jane.dev</a>'
     )
   })
 
@@ -225,20 +225,35 @@ describe('renderLetterHtml', () => {
   })
 })
 
-describe('links in the CV', () => {
-  it('adds https:// to scheme-less links and never emits other schemes', () => {
+describe('the website link in the contact line', () => {
+  const contactWith = (website: string): string => {
     const profile = sampleProfile()
-    profile.personal.links = [
-      { label: 'LinkedIn', url: 'linkedin.com/in/jane' },
-      { label: 'Evil', url: 'javascript:alert(1)' },
-      { label: 'Mail', url: 'mailto:jane@example.com' },
-      { label: 'Site', url: 'https://jane.dev' }
-    ]
-    const html = renderCvHtml(profile, sampleCv(), { language: 'en' })
-    expect(html).toContain('href="https://linkedin.com/in/jane"')
-    expect(html).toContain('href="mailto:jane@example.com"')
-    expect(html).toContain('href="https://jane.dev"')
-    expect(html).not.toContain('javascript:')
-    expect(html).toContain('Evil')
+    profile.personal.website = website
+    return contactLine(renderCvHtml(profile, sampleCv(), { language: 'en' }))
+  }
+  const BASE = 'Copenhagen, Denmark | +45 12 34 56 78 | jane@example.com'
+
+  it('links to what was pasted and shows it without https://, www. or a trailing slash', () => {
+    expect(contactWith('https://www.google.com/')).toBe(`${BASE} | <a href="https://www.google.com/">google.com</a>`)
+    expect(contactWith('https://jane.dev/work')).toBe(`${BASE} | <a href="https://jane.dev/work">jane.dev/work</a>`)
+  })
+
+  it('adds https:// to a pasted address without a scheme, ignoring surrounding spaces', () => {
+    expect(contactWith('  jane.dev ')).toBe(`${BASE} | <a href="https://jane.dev">jane.dev</a>`)
+  })
+
+  it('leaves no separator behind when no website is entered', () => {
+    expect(contactWith('')).toBe(BASE)
+    expect(contactWith('   ')).toBe(BASE)
+  })
+
+  it('leaves out an address with another scheme entirely', () => {
+    expect(contactWith('javascript:alert(1)')).toBe(BASE)
+  })
+
+  it('is on the letter too', () => {
+    const profile = sampleProfile()
+    const html = renderLetterHtml(profile, sampleLetter(), { language: 'en', date: new Date(2026, 0, 1) })
+    expect(contactLine(html)).toContain('<a href="https://jane.dev/">jane.dev</a>')
   })
 })

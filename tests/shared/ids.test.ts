@@ -24,7 +24,7 @@ describe('allocateId', () => {
         ...r.profile,
         experience: [
           ...r.profile.experience,
-          { id: r.id, title: '', employer: '', location: '', start: '', end: '', bullets: [] }
+          { id: r.id, title: '', employer: '', location: '', start: '', end: '', bullets: [], alwaysInclude: false }
         ]
       }
     }

@@ -26,7 +26,7 @@ export function sampleProfile(): Profile {
       email: 'jane@example.com',
       phone: '+45 12 34 56 78',
       location: 'Copenhagen, Denmark',
-      links: [{ label: 'LinkedIn', url: 'https://linkedin.com/in/janedoe' }]
+      website: 'https://jane.dev/'
     },
     summary: 'Data engineer with five years of experience building data pipelines.',
     experience: [

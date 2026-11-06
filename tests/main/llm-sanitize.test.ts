@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeLanguage, sanitizeCv } from '../../src/main/llm/sanitize'
+import { normalizeLanguage, restoreAlwaysIncluded, sanitizeCv } from '../../src/main/llm/sanitize'
+import type { Profile } from '../../src/shared/types'
 import { sampleCv, sampleProfile } from '../fixtures/sample-data'
 
 describe('sanitizeCv', () => {
@@ -34,6 +35,31 @@ describe('sanitizeCv', () => {
 
   it('keeps a valid cv unchanged with no warnings', () => {
     expect(sanitizeCv(sampleProfile(), sampleCv())).toEqual({ cv: sampleCv(), warnings: [] })
+  })
+})
+
+describe('restoreAlwaysIncluded', () => {
+  const marked = (): Profile => {
+    const profile = sampleProfile()
+    profile.experience[1].alwaysInclude = true
+    return profile
+  }
+
+  it('adds a marked job that is missing, with its original text, and warns', () => {
+    const { cv, warnings } = restoreAlwaysIncluded(marked(), sampleCv())
+    expect(cv.experience.map((e) => e.id)).toEqual(['exp_01', 'exp_02'])
+    expect(cv.experience[1]).toEqual({ id: 'exp_02', title: 'Junior Developer', bullets: ['Maintained internal web tools'] })
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain('Junior Developer @ Contoso ApS')
+  })
+
+  it('leaves a marked job that is present untouched', () => {
+    const present = { ...sampleCv(), experience: [{ id: 'exp_02', title: 'Udvikler', bullets: ['Kort'] }] }
+    expect(restoreAlwaysIncluded(marked(), present)).toEqual({ cv: present, warnings: [] })
+  })
+
+  it('leaves out jobs that are not marked', () => {
+    expect(restoreAlwaysIncluded(sampleProfile(), sampleCv())).toEqual({ cv: sampleCv(), warnings: [] })
   })
 })
 

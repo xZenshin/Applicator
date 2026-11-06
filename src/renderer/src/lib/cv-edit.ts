@@ -40,7 +40,7 @@ const ENGLISH_LABELS: CvLabels = {
 }
 
 const isBlank = (item: ProfileItem): boolean =>
-  Object.entries(item).every(([key, value]) => key === 'id' || value === '' || (Array.isArray(value) && value.length === 0))
+  Object.entries(item).every(([key, value]) => key === 'id' || value === '' || value === false || (Array.isArray(value) && value.length === 0))
 
 const entries = (cv: CvContent, section: SectionKey): CvEntry[] => cv[section] as CvEntry[]
 const withEntries = (cv: CvContent, section: SectionKey, items: CvEntry[]): CvContent =>

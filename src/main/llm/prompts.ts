@@ -17,7 +17,9 @@ ${summaryRule}
 8. Follow the candidate's extra instructions unless they conflict with these rules.
 9. The CV must fit on one A4 page; as a rough guide, that is about 40 lines of text besides the name and the section headings. Use the page well, but never go over it: when the profile has more relevant material than fits, keep the most relevant.
 10. Education is kept short. degree: the title in short form, e.g. "MSc in Computer Science"; add nothing else.
-11. Projects are items like the others: select the relevant ones by id. name: as in the profile. description: one or two sentences. technologies: a comma-separated list using only technologies listed for that project, most relevant first.`
+11. Projects are items like the others: select the relevant ones by id. name: as in the profile. description: one or two sentences. technologies: a comma-separated list using only technologies listed for that project, most relevant first.
+12. Do not list a project that describes the same work as a job on the CV: keep that work under the job, whose text may use details from the project. A project that is related to a job but is separate work may stay.
+13. A job with alwaysInclude: true must be on the CV, even if it is not very relevant to the posting; this overrides rule 2. Keep it short if it is less relevant.`
 
 const LETTER_RULES = `Rules:
 1. Write in the posting's language, given as job.language in the job analysis.
@@ -44,7 +46,7 @@ const cvReviseSystem = (cvOnly: boolean): string => `You revise a CV that was al
 
 ${cvRules(cvOnly ? CV_ONLY_SUMMARY_RULE : SUMMARY_RULE)}
 
-Apply the requested change and keep everything else as it is. The requested change takes priority over rule 2 (which items to select) and rule 5 (lengths), but never over rule 1: do not add facts that are not in the profile. You may add items from the profile if the change calls for it. Return the complete revised CV.
+Apply the requested change and keep everything else as it is. The requested change takes priority over rule 2 (which items to select), rule 5 (lengths), rule 12 (repeated work) and rule 13 (jobs to always include), but never over rule 1: do not add facts that are not in the profile. You may add items from the profile if the change calls for it. Return the complete revised CV.
 
 ${highlightRule('CV')}`
 
@@ -69,7 +71,7 @@ ${highlightRule('letter')}`
 export function fitOnePageInstruction(overflowLines: number, cvOnly = false): string {
   const lines = `${overflowLines} line${overflowLines === 1 ? '' : 's'}`
   const summary = cvOnly ? ' Shorten the summary only if nothing else can go: it does the job of the application letter.' : ''
-  return `The CV must fit on one A4 page, but it is about ${lines} too long. Shorten it just enough to fit: first leave out the least relevant items, bullets and details, then shorten long text. Cut no more than needed, so the page stays full.${summary}`
+  return `The CV must fit on one A4 page, but it is about ${lines} too long. Shorten it just enough to fit: first leave out the least relevant items, bullets and details, then shorten long text. Keep every job marked alwaysInclude, shortening its text if needed. Cut no more than needed, so the page stays full.${summary}`
 }
 
 const DEFAULT_TARGET_WORDS = 350

@@ -40,6 +40,8 @@ function Field(props: { field: FieldDescriptor; item: ProfileItem; onChange: Pro
         </Stack>
       )
     }
+    case 'checkbox':
+      return <Checkbox mt={32} label={field.label} checked={value as boolean} onChange={(e) => set(e.currentTarget.checked)} />
     case 'lines':
       return <LinesInput label={field.label} value={value as string[]} resetKey={item.id} onChange={set} />
   }
