@@ -48,6 +48,7 @@ h2 { margin: 0 0 5pt; font-size: 16pt; line-height: 1.1; font-weight: 400; color
 .entry-title { color: #000; }
 .dates { color: #595959; }
 .entry-place { color: #000; margin: 2pt 0 3pt; }
+.technologies { color: #595959; margin-top: 2pt; }
 `
 
 /** Margins, text size and spacing follow the user's own letter, written in Google Docs: 1-inch margins, 11pt text, 12pt between paragraphs. */

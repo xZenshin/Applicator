@@ -69,6 +69,8 @@ export function PreviewFrame(props: {
         ref={frame}
         title={props.title}
         sandbox="allow-same-origin"
+        // The frame is sized to its content. Without this, scrollbars from before it grows keep each other alive.
+        scrolling="no"
         srcDoc={props.html}
         onLoad={load}
         style={{

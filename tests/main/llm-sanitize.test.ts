@@ -19,6 +19,19 @@ describe('sanitizeCv', () => {
     expect(warnings.filter((w) => w.includes('exp_01'))).toHaveLength(1)
   })
 
+  it('drops a project that is not in the profile', () => {
+    const cv = {
+      ...sampleCv(),
+      projects: [
+        { id: 'proj_01', name: 'Real', description: '', technologies: '' },
+        { id: 'proj_99', name: 'Invented', description: '', technologies: '' }
+      ]
+    }
+    const { cv: clean, warnings } = sanitizeCv(sampleProfile(), cv)
+    expect(clean.projects.map((p) => p.id)).toEqual(['proj_01'])
+    expect(warnings.join(' ')).toContain('proj_99')
+  })
+
   it('keeps a valid cv unchanged with no warnings', () => {
     expect(sanitizeCv(sampleProfile(), sampleCv())).toEqual({ cv: sampleCv(), warnings: [] })
   })

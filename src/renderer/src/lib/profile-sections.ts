@@ -6,19 +6,22 @@ export interface FieldDescriptor {
   key: string
   label: string
   kind: FieldKind
+  placeholder?: string
 }
 
 export const SECTION_TITLES: Record<SectionKey, string> = {
   skills: 'Technical skills',
   education: 'Education',
-  experience: 'Experience'
+  experience: 'Experience',
+  projects: 'Projects'
 }
 
 /** Singular nouns for "Add …" buttons. */
 export const SECTION_ITEM_NAMES: Record<SectionKey, string> = {
   skills: 'skill',
   education: 'education',
-  experience: 'experience'
+  experience: 'experience',
+  projects: 'project'
 }
 
 export const SECTION_FIELDS: Record<SectionKey, FieldDescriptor[]> = {
@@ -31,12 +34,16 @@ export const SECTION_FIELDS: Record<SectionKey, FieldDescriptor[]> = {
     { key: 'bullets', label: 'Description: one line shows as a paragraph, several as bullet points', kind: 'lines' }
   ],
   education: [
-    { key: 'degree', label: 'Degree', kind: 'text' },
-    { key: 'institution', label: 'Institution', kind: 'text' },
-    { key: 'location', label: 'Location', kind: 'text' },
+    { key: 'degree', label: 'Title', kind: 'text', placeholder: 'MSc in Computer Science' },
+    { key: 'gpa', label: 'GPA', kind: 'text' },
+    { key: 'institution', label: 'University', kind: 'text' },
     { key: 'start', label: 'Start', kind: 'month' },
-    { key: 'end', label: 'End', kind: 'monthOrPresent' },
-    { key: 'details', label: 'Details: one line shows as a paragraph, several as bullet points', kind: 'lines' }
+    { key: 'end', label: 'End', kind: 'monthOrPresent' }
+  ],
+  projects: [
+    { key: 'name', label: 'Project name', kind: 'text' },
+    { key: 'technologies', label: 'Technologies, separated by commas', kind: 'text' },
+    { key: 'description', label: 'Short description', kind: 'textarea' }
   ],
   skills: [
     { key: 'name', label: 'Skill', kind: 'text' },
@@ -55,5 +62,7 @@ export function itemLabel(section: SectionKey, item: ProfileItem): string {
       return join(i.degree, ', ', i.institution) || 'New education'
     case 'skills':
       return join(i.name, ' · ', i.category) || 'New skill'
+    case 'projects':
+      return i.name || 'New project'
   }
 }

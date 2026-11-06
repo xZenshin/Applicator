@@ -47,7 +47,8 @@ function sectionBody(section: SectionKey, profile: Profile, cv: CvContent): stri
         .map((c) => {
           const p = find(c.id)
           if (!p) return ''
-          return entry(c.degree, formatYearRange(p.start, p.end, present), join([p.institution, p.location], ' | '), text(c.details))
+          const gpa = p.gpa ? `${cv.labels.gpa} ${p.gpa}` : ''
+          return entry(c.degree, join([gpa, formatYearRange(p.start, p.end, present)], ' · '), p.institution, '')
         })
         .join('')
     }
@@ -58,6 +59,17 @@ function sectionBody(section: SectionKey, profile: Profile, cv: CvContent): stri
           const p = find(c.id)
           if (!p) return ''
           return entry(c.title, formatYearRange(p.start, p.end, present), join([p.employer, p.location], ' | '), text(c.bullets))
+        })
+        .join('')
+    }
+    case 'projects': {
+      const find = lookup(profile.projects)
+      return cv.projects
+        .filter((c) => find(c.id))
+        .map((c) => {
+          const description = c.description ? `<p>${e(c.description)}</p>` : ''
+          const technologies = c.technologies ? `<p class="technologies">${e(c.technologies)}</p>` : ''
+          return entry(c.name, '', '', description + technologies)
         })
         .join('')
     }

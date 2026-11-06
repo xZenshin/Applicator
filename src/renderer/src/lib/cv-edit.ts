@@ -17,7 +17,11 @@ export function entryFromProfile(profile: Profile, section: SectionKey, id: stri
     }
     case 'education': {
       const p = find(profile.education)
-      return { id, degree: p.degree, details: p.details }
+      return { id, degree: p.degree }
+    }
+    case 'projects': {
+      const p = find(profile.projects)
+      return { id, name: p.name, description: p.description, technologies: p.technologies }
     }
     case 'skills': {
       const p = find(profile.skills)
@@ -30,7 +34,9 @@ const ENGLISH_LABELS: CvLabels = {
   skills: 'Technical Skills',
   education: 'Education',
   experience: 'Experience',
-  present: 'Present'
+  projects: 'Projects',
+  present: 'Present',
+  gpa: 'GPA'
 }
 
 const isBlank = (item: ProfileItem): boolean =>
@@ -42,7 +48,7 @@ const withEntries = (cv: CvContent, section: SectionKey, items: CvEntry[]): CvCo
 
 /** The whole profile as an untailored CV, for previewing everything entered so far. */
 export function cvFromProfile(profile: Profile): CvContent {
-  const empty: CvContent = { summary: profile.summary, skills: [], education: [], experience: [], labels: ENGLISH_LABELS }
+  const empty: CvContent = { summary: profile.summary, skills: [], education: [], experience: [], projects: [], labels: ENGLISH_LABELS }
   return SECTION_KEYS.reduce((cv, section) => {
     const items = (profile[section] as ProfileItem[]).filter((item) => !isBlank(item))
     return withEntries(cv, section, items.map((item) => entryFromProfile(profile, section, item.id)))

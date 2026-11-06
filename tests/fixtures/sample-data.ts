@@ -50,24 +50,20 @@ export function sampleProfile(): Profile {
       }
     ],
     education: [
-      {
-        id: 'edu_01',
-        degree: 'MSc Computer Science',
-        institution: 'DTU',
-        location: 'Lyngby',
-        start: '2016-09',
-        end: '2018-06',
-        details: ['Thesis on stream processing']
-      }
+      { id: 'edu_01', degree: 'MSc in Computer Science', gpa: '10.5', institution: 'DTU', start: '2016-09', end: '2018-06' }
     ],
     skills: [
       { id: 'skill_01', name: 'Python', category: 'Programming' },
       { id: 'skill_02', name: 'SQL', category: 'Programming' }
     ],
+    projects: [
+      { id: 'proj_01', name: 'Stream Monitor', description: 'Dashboard that tracks the health of streaming pipelines.', technologies: 'Python, Kafka' }
+    ],
     nextIds: {
       skills: 3,
       education: 2,
-      experience: 3
+      experience: 3,
+      projects: 2
     }
   })
 }
@@ -103,13 +99,16 @@ export function sampleCv(): CvContent {
     experience: [
       { id: 'exp_01', title: 'Data Engineer', bullets: ['Built batch and streaming pipelines in Python'] }
     ],
-    education: [{ id: 'edu_01', degree: 'MSc Computer Science', details: [] }],
+    education: [{ id: 'edu_01', degree: 'MSc in Computer Science' }],
     skills: [{ id: 'skill_01', name: 'Python', category: 'Programming' }],
+    projects: [],
     labels: {
       skills: 'Technical Skills',
       education: 'Education',
       experience: 'Experience',
-      present: 'Present'
+      projects: 'Projects',
+      present: 'Present',
+      gpa: 'GPA'
     }
   })
 }

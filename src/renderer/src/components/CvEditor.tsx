@@ -5,18 +5,20 @@ import type { ProfileItem } from '../lib/profile-edit'
 import { SECTION_TITLES, itemLabel } from '../lib/profile-sections'
 import { LinesInput } from './LinesInput'
 
-const CV_FIELDS: Record<SectionKey, { key: string; label: string; kind: 'text' | 'lines' }[]> = {
+const CV_FIELDS: Record<SectionKey, { key: string; label: string; kind: 'text' | 'textarea' | 'lines' }[]> = {
   skills: [
     { key: 'name', label: 'Skill', kind: 'text' },
     { key: 'category', label: 'Category', kind: 'text' }
   ],
-  education: [
-    { key: 'degree', label: 'Degree', kind: 'text' },
-    { key: 'details', label: 'Details: one line shows as a paragraph, several as bullet points', kind: 'lines' }
-  ],
+  education: [{ key: 'degree', label: 'Title', kind: 'text' }],
   experience: [
     { key: 'title', label: 'Job title', kind: 'text' },
     { key: 'bullets', label: 'Description: one line shows as a paragraph, several as bullet points', kind: 'lines' }
+  ],
+  projects: [
+    { key: 'name', label: 'Project name', kind: 'text' },
+    { key: 'technologies', label: 'Technologies', kind: 'text' },
+    { key: 'description', label: 'Short description', kind: 'textarea' }
   ]
 }
 
@@ -95,6 +97,21 @@ export function CvEditor(props: Props): React.JSX.Element {
                         />
                       ))}
                   </SimpleGrid>
+                  {CV_FIELDS[section]
+                    .filter((f) => f.kind === 'textarea')
+                    .map((f) => (
+                      <Textarea
+                        key={f.key}
+                        mt="xs"
+                        size="xs"
+                        autosize
+                        minRows={2}
+                        label={f.label}
+                        disabled={props.disabled}
+                        value={(entry as Record<string, unknown>)[f.key] as string}
+                        onChange={(e) => onChange(updateCvItem(cv, section, entry.id, { [f.key]: e.currentTarget.value }))}
+                      />
+                    ))}
                   {CV_FIELDS[section]
                     .filter((f) => f.kind === 'lines')
                     .map((f) => (

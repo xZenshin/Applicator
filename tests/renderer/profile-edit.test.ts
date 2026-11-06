@@ -17,10 +17,11 @@ describe('addItem', () => {
 
   it('creates the right blank shape for every section', () => {
     let p = emptyProfile()
-    for (const s of ['education', 'skills'] as const) {
+    for (const s of ['education', 'skills', 'projects'] as const) {
       p = addItem(p, s).profile
     }
-    expect(p.education[0]).toEqual({ id: 'edu_01', degree: '', institution: '', location: '', start: '', end: '', details: [] })
+    expect(p.education[0]).toEqual({ id: 'edu_01', degree: '', gpa: '', institution: '', start: '', end: '' })
+    expect(p.projects[0]).toEqual({ id: 'proj_01', name: '', description: '', technologies: '' })
     expect(p.skills[0]).toEqual({ id: 'skill_01', name: '', category: '' })
   })
 })

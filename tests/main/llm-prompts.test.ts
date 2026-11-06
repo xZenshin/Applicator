@@ -8,6 +8,7 @@ import {
   targetWordCount
 } from '../../src/main/llm/prompts'
 import { TailorOutputSchema, toCliSchema } from '../../src/main/llm/schemas'
+import { CvContentSchema } from '../../src/shared/types'
 import { SAMPLE_120_WORDS, sampleCv, sampleJob, sampleLetter, sampleProfile, sampleStyle } from '../fixtures/sample-data'
 
 const JOB_TEXT = 'Acme is hiring a Data Engineer with Python and SQL.'
@@ -15,7 +16,7 @@ const JOB_TEXT = 'Acme is hiring a Data Engineer with Python and SQL.'
 describe('buildTailorInput', () => {
   it('contains every profile item id and the job text, and omits nextIds', () => {
     const input = buildTailorInput({ profile: sampleProfile(), jobDescription: JOB_TEXT, instructions: '' })
-    for (const id of ['exp_01', 'exp_02', 'edu_01', 'skill_01', 'skill_02']) {
+    for (const id of ['exp_01', 'exp_02', 'edu_01', 'skill_01', 'skill_02', 'proj_01']) {
       expect(input).toContain(id)
     }
     expect(input).toContain(JOB_TEXT)
@@ -190,6 +191,17 @@ describe('CV-only applications', () => {
   })
 })
 
+describe('short education and projects', () => {
+  it('every CV prompt asks for short degree titles and for projects with only known technologies', async () => {
+    const prompts = await import('../../src/main/llm/prompts')
+    for (const prompt of [prompts.TAILOR_SYSTEM, prompts.CV_REVISE_SYSTEM, prompts.CV_ONLY_TAILOR_SYSTEM, prompts.CV_ONLY_REVISE_SYSTEM]) {
+      expect(prompt).toMatch(/degree: the title in short form/)
+      expect(prompt).toMatch(/technologies: .*only technologies listed for that project/)
+      expect(prompt).toMatch(/GPAs/)
+    }
+  })
+})
+
 describe('one-page CVs', () => {
   it('every CV prompt says the CV must fit on one A4 page', async () => {
     const prompts = await import('../../src/main/llm/prompts')
@@ -206,6 +218,16 @@ describe('one-page CVs', () => {
 })
 
 describe('toCliSchema', () => {
+  it('asks Claude for projects and for the projects and GPA labels, and for no more than the title of a degree', () => {
+    const schema = toCliSchema(CvContentSchema) as {
+      required: string[]
+      properties: { labels: { required: string[] }; education: { items: { properties: Record<string, unknown> } } }
+    }
+    expect(schema.required).toContain('projects')
+    expect(schema.properties.labels.required).toEqual(expect.arrayContaining(['projects', 'gpa']))
+    expect(Object.keys(schema.properties.education.items.properties)).toEqual(['id', 'degree'])
+  })
+
   it('has no $schema and describes job and cv', () => {
     const schema = toCliSchema(TailorOutputSchema) as Record<string, unknown> & {
       properties: Record<string, unknown>

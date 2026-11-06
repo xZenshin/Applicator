@@ -10,12 +10,14 @@ const cvRules = (summaryRule: string): string => `Rules:
 1. Use only information from the candidate profile. Never add skills, tools, employers, numbers, achievements or responsibilities that are not in the profile. If the posting asks for something the candidate lacks, leave it out.
 2. Select only the items that are relevant to this posting. Reference each one by its exact id. Never output an id that is not in the profile, and never move an id to a different section than the one it comes from. Within each section, order items from most to least relevant.
 3. Light rewording only: you may rephrase, shorten, reorder or drop bullet points, and echo the posting's terminology where it truthfully describes the candidate's experience. Do not exaggerate.
-4. Write all text (job titles, bullets, degree names and details, skill names and categories, the summary and the section labels) in the language of the job posting. Proper nouns, product names and technologies stay as they are.
+4. Write all text (job titles, bullets, degree titles, skill names and categories, project descriptions, the summary and the section labels) in the language of the job posting. Proper nouns, product names and technologies stay as they are.
 ${summaryRule}
-6. labels: the section headings, and the word for an ongoing period ("present"), in the posting's language.
-7. Dates, employers, institutions and locations are added later from the profile by id, so do not put them in the text fields.
+6. labels: the section headings, the word for an ongoing period ("present") and the word for a grade point average ("gpa"), in the posting's language.
+7. Dates, employers, institutions, GPAs and locations are added later from the profile by id, so do not put them in the text fields.
 8. Follow the candidate's extra instructions unless they conflict with these rules.
-9. The CV must fit on one A4 page; as a rough guide, that is about 40 lines of text besides the name and the section headings. Use the page well, but never go over it: when the profile has more relevant material than fits, keep the most relevant.`
+9. The CV must fit on one A4 page; as a rough guide, that is about 40 lines of text besides the name and the section headings. Use the page well, but never go over it: when the profile has more relevant material than fits, keep the most relevant.
+10. Education is kept short. degree: the title in short form, e.g. "MSc in Computer Science"; add nothing else.
+11. Projects are items like the others: select the relevant ones by id. name: as in the profile. description: one or two sentences. technologies: a comma-separated list using only technologies listed for that project, most relevant first.`
 
 const LETTER_RULES = `Rules:
 1. Write in the posting's language, given as job.language in the job analysis.

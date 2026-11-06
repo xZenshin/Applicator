@@ -21,7 +21,7 @@ Applicator finds `claude.exe` automatically (on `PATH`, in `%USERPROFILE%\.local
 
 ## Using the app
 
-1. **My CV**: enter your personal details, an intro summary and everything you might want on a CV: technical skills, education and experience. This is your master CV, so it can run to several pages: for each job, Claude picks what is relevant and keeps the tailored CV to one page. A live preview next to the form shows how the CV looks, and **Download PDF** saves it as a PDF wherever you choose. Each item gets a permanent id (`exp_01`, `skill_03`, …) that Claude uses to refer to it.
+1. **My CV**: enter your personal details, an intro summary and everything you might want on a CV: technical skills, education (title, GPA, years and university), experience and projects (name, short description and technologies). This is your master CV, so it can run to several pages: for each job, Claude picks what is relevant and keeps the tailored CV to one page. A live preview next to the form shows how the CV looks, and **Download PDF** saves it as a PDF wherever you choose. Each item gets a permanent id (`exp_01`, `skill_03`, …) that Claude uses to refer to it.
 2. **Writing style**: paste 2–3 applications you wrote yourself and, optionally, default instructions (e.g. "Keep it under one page").
 3. **New application**: paste the full job posting and click **Generate**. This usually takes 1–2 minutes. Optionally, paste text you have already written for the letter (a section or an unfinished draft): Claude works it into the letter, polishing the wording to fit the posting. You can also add extra instructions. For jobs that only ask for a CV, choose **CV only**: there is no letter, and the summary at the top of the CV becomes a longer, motivated introduction in your own voice that also says why you want the job. After tailoring, the app measures the CV exactly as it will print; if it runs past one page, Claude shortens it (at most twice) before the letter is written.
 4. **Review**: edit the letter and CV next to a live preview, tick or untick CV items, or ask Claude for changes ("Make it shorter"), with one-step Undo. To change just one part, highlight it in the editor or the preview, click **Ask Claude** and say what to do with it ("Put more emphasis on my experience with Python"). Claude rewrites only that passage. If your changes push the CV past one page, a note above the preview says by how many lines. Click **Export PDFs** when you're happy.
@@ -58,30 +58,3 @@ Applicator runs the Claude Code CLI in print mode (`claude -p`) with structured 
 - Everything you enter is sent to Claude through stdin.
 
 See [docs/claude-cli-notes.md](docs/claude-cli-notes.md) for the exact invocation and output format.
-
-## Development
-
-```powershell
-npm install
-npm run dev          # start the app with hot reload
-npm test             # unit tests (Vitest)
-npm run typecheck
-```
-
-GitHub Actions ([.github/workflows/tests.yml](.github/workflows/tests.yml)) runs the typecheck and the tests on Windows for every pull request into `main` and every published release. You can also start it by hand from the repository's **Actions** tab.
-
-A live smoke test against the real CLI is skipped by default (also in GitHub Actions). Run it with `$env:LIVE_CLI = '1'; npx vitest run tests/main/live-cli.test.ts` (optionally set `LIVE_MODEL`).
-
-The CV's small-caps headings use "Cabin Small Caps", a font generated from Cabin by `scripts/make-small-caps-font.py` (needs Python with `pip install fonttools brotli`). The generated fonts are committed in `src/shared/templates/font-files`, so you only need to run it again if Cabin is updated.
-
-If `npm run dev` exits with `Cannot read properties of undefined (reading 'isPackaged')`, your shell has `ELECTRON_RUN_AS_NODE` set (some editors and tools set it). Clear it first: `Remove-Item Env:ELECTRON_RUN_AS_NODE`.
-
-## Building the installer
-
-```powershell
-npm run build:win
-```
-
-This produces `dist\applicator-<version>-setup.exe`. The installer isn't code-signed, so Windows SmartScreen will warn the first time: choose **More info → Run anyway**.
-
-Design and plan documents are in [docs/superpowers](docs/superpowers).

@@ -52,6 +52,41 @@ describe('renderCvHtml', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order)
   })
 
+  it('shows a degree as its title, GPA, years and university, and nothing more', () => {
+    const html = visible(renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' }))
+    expect(html).toContain('MSc in Computer Science GPA 10.5 · 2016 – 2018')
+    expect(html).toContain('DTU')
+  })
+
+  it('writes the GPA label in the language of the CV, and leaves it out when no GPA is entered', () => {
+    const labels = { ...sampleCv().labels, gpa: 'Snit' }
+    const danish = visible(renderCvHtml(sampleProfile(), { ...sampleCv(), labels }, { language: 'da' }))
+    expect(danish).toContain('MSc in Computer Science Snit 10.5 · 2016 – 2018')
+
+    const profile = sampleProfile()
+    profile.education[0].gpa = ''
+    const none = visible(renderCvHtml(profile, sampleCv(), { language: 'en' }))
+    expect(none).toContain('MSc in Computer Science 2016 – 2018')
+    expect(none).not.toContain('GPA')
+  })
+
+  it('shows a project as its name, description and technologies, after experience', () => {
+    const cv = {
+      ...sampleCv(),
+      projects: [{ id: 'proj_01', name: 'Strøm-monitor', description: 'Overvåger pipelines.', technologies: 'Python, Kafka' }]
+    }
+    const html = visible(renderCvHtml(sampleProfile(), cv, { language: 'da' }))
+    const order = ['Experience', 'Projects', 'Strøm-monitor', 'Overvåger pipelines.', 'Python, Kafka'].map((text) => html.indexOf(text))
+    expect(order.every((at) => at > -1)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+  })
+
+  it('leaves out the projects section when no project is selected', () => {
+    const html = visible(renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' }))
+    expect(html).not.toContain('Projects')
+    expect(html).not.toContain('Stream Monitor')
+  })
+
   it('only shows selected items', () => {
     const html = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
     expect(html).not.toContain('Contoso ApS')

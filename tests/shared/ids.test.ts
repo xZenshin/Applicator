@@ -12,6 +12,10 @@ describe('allocateId', () => {
     expect([a.id, b.id, allocateId(p, 'skills').id]).toEqual(['exp_01', 'exp_02', 'skill_01'])
   })
 
+  it('allocates project ids', () => {
+    expect(allocateId(emptyProfile(), 'projects').id).toBe('proj_01')
+  })
+
   it('never reuses ids after deletion', () => {
     let p = emptyProfile()
     for (const _ of [1, 2]) {

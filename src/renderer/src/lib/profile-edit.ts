@@ -8,7 +8,9 @@ function blankItem(section: SectionKey, id: string): ProfileItem {
     case 'experience':
       return { id, title: '', employer: '', location: '', start: '', end: '', bullets: [] }
     case 'education':
-      return { id, degree: '', institution: '', location: '', start: '', end: '', details: [] }
+      return { id, degree: '', gpa: '', institution: '', start: '', end: '' }
+    case 'projects':
+      return { id, name: '', description: '', technologies: '' }
     case 'skills':
       return { id, name: '', category: '' }
   }

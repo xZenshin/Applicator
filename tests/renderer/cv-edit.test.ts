@@ -21,8 +21,13 @@ describe('entryFromProfile', () => {
     })
     expect(entryFromProfile(p, 'education', 'edu_01')).toEqual({
       id: 'edu_01',
-      degree: 'MSc Computer Science',
-      details: ['Thesis on stream processing']
+      degree: 'MSc in Computer Science'
+    })
+    expect(entryFromProfile(p, 'projects', 'proj_01')).toEqual({
+      id: 'proj_01',
+      name: 'Stream Monitor',
+      description: 'Dashboard that tracks the health of streaming pipelines.',
+      technologies: 'Python, Kafka'
     })
     expect(entryFromProfile(p, 'skills', 'skill_02')).toEqual({ id: 'skill_02', name: 'SQL', category: 'Programming' })
   })
@@ -72,6 +77,7 @@ describe('cvFromProfile', () => {
     expect(cv.experience).toEqual([entryFromProfile(p, 'experience', 'exp_01'), entryFromProfile(p, 'experience', 'exp_02')])
     expect(cv.skills.map((s) => s.id)).toEqual(['skill_01', 'skill_02'])
     expect(cv.education).toEqual([entryFromProfile(p, 'education', 'edu_01')])
+    expect(cv.projects).toEqual([entryFromProfile(p, 'projects', 'proj_01')])
   })
 
   it('uses English headings', () => {
@@ -79,7 +85,9 @@ describe('cvFromProfile', () => {
       skills: 'Technical Skills',
       education: 'Education',
       experience: 'Experience',
-      present: 'Present'
+      projects: 'Projects',
+      present: 'Present',
+      gpa: 'GPA'
     })
   })
 
