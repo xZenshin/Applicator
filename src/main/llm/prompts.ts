@@ -94,7 +94,8 @@ const highlightSections = (highlight?: Highlight): string[] =>
 function profileForPrompt(profile: Profile): Omit<Profile, 'version' | 'nextIds'> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { version, nextIds, ...rest } = profile
-  return rest
+  // Blanked so a website that is switched off can't end up in the letter's text.
+  return rest.personal.showWebsite ? rest : { ...rest, personal: { ...rest.personal, website: '' } }
 }
 
 const writingSamples = (style: Style): string =>

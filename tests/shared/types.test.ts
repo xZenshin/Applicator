@@ -31,6 +31,13 @@ describe('data shapes', () => {
     expect(parsed.personal).not.toHaveProperty('links')
   })
 
+  it('reads a profile saved before the website could be switched off as switched on', () => {
+    const current = sampleProfile()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { showWebsite, ...oldPersonal } = current.personal
+    expect(ProfileSchema.parse({ ...current, personal: oldPersonal }).personal.showWebsite).toBe(true)
+  })
+
   it('reads a job saved before it could be marked to always include as not marked', () => {
     const current = sampleProfile()
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -256,4 +256,13 @@ describe('the website link in the contact line', () => {
     const html = renderLetterHtml(profile, sampleLetter(), { language: 'en', date: new Date(2026, 0, 1) })
     expect(contactLine(html)).toContain('<a href="https://jane.dev/">jane.dev</a>')
   })
+
+  it('leaves the link off the CV and the letter when it is switched off, keeping the address', () => {
+    const profile = sampleProfile()
+    profile.personal.showWebsite = false
+    const letter = renderLetterHtml(profile, sampleLetter(), { language: 'en', date: new Date(2026, 0, 1) })
+    expect(contactLine(renderCvHtml(profile, sampleCv(), { language: 'en' }))).toBe(BASE)
+    expect(contactLine(letter)).toBe(BASE)
+    expect(profile.personal.website).toBe('https://jane.dev/')
+  })
 })

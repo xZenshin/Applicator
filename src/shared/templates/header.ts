@@ -18,6 +18,7 @@ function nameLines(fullName: string): string {
 
 /** The name, with the contact line to its right: the top of both the CV and the letter. */
 export function renderHeader(personal: Personal): string {
-  const contact = [e(personal.location), e(personal.phone), e(personal.email), websiteLink(personal.website)].filter(Boolean).join(' | ')
+  const website = personal.showWebsite ? websiteLink(personal.website) : ''
+  const contact = [e(personal.location), e(personal.phone), e(personal.email), website].filter(Boolean).join(' | ')
   return `<header><h1>${nameLines(personal.fullName)}</h1>${contact ? `<div class="contact">${contact}</div>` : ''}</header>`
 }

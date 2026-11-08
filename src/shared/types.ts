@@ -22,7 +22,9 @@ export const PersonalSchema = z.object({
   email: z.string(),
   phone: z.string(),
   location: z.string(),
-  website: z.string().default('')
+  website: z.string().default(''),
+  /** Off keeps the address but leaves it off the documents and out of what Claude sees. */
+  showWebsite: z.boolean().default(true)
 })
 export type Personal = z.infer<typeof PersonalSchema>
 
@@ -84,7 +86,7 @@ export type Profile = z.infer<typeof ProfileSchema>
 export function emptyProfile(): Profile {
   return {
     version: 1,
-    personal: { fullName: '', email: '', phone: '', location: '', website: '' },
+    personal: { fullName: '', email: '', phone: '', location: '', website: '', showWebsite: true },
     summary: '',
     experience: [],
     education: [],
