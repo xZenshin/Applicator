@@ -155,7 +155,7 @@ export const CvLabelsSchema = z
     experience: z.string(),
     projects: z.string().default('Projects'),
     present: z.string().describe('Word used for an ongoing period, e.g. "Present" or "nu"'),
-    gpa: z.string().describe('Word or abbreviation for a grade point average, e.g. "GPA" or "Karaktergennemsnit"').default('GPA')
+    gpa: z.string().describe('Words for an average grade, e.g. "Average grades" or "Karaktergennemsnit"').default('Average grades')
   })
   .describe("Section headings in the job posting's language")
 export type CvLabels = z.infer<typeof CvLabelsSchema>

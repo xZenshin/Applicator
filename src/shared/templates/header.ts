@@ -16,9 +16,17 @@ function nameLines(fullName: string): string {
   return m ? `${e(m[1])}<br>${e(m[2])}` : e(fullName.trim())
 }
 
-/** The name, with the contact line to its right: the top of both the CV and the letter. */
+/** Joins the non-empty parts with bars. */
+const barred = (parts: string[]): string => parts.filter(Boolean).join(' | ')
+
+/**
+ * The name, with the contact details to its right: the top of both the CV and the letter.
+ * Location and phone go on one line, email and website on the next, so neither line runs too long.
+ */
 export function renderHeader(personal: Personal): string {
   const website = personal.showWebsite ? websiteLink(personal.website) : ''
-  const contact = [e(personal.location), e(personal.phone), e(personal.email), website].filter(Boolean).join(' | ')
+  const contact = [barred([e(personal.location), e(personal.phone)]), barred([e(personal.email), website])]
+    .filter(Boolean)
+    .join('<br>')
   return `<header><h1>${nameLines(personal.fullName)}</h1>${contact ? `<div class="contact">${contact}</div>` : ''}</header>`
 }

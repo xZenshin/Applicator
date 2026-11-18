@@ -108,7 +108,7 @@ export function sampleCv(): CvContent {
       experience: 'Experience',
       projects: 'Projects',
       present: 'Present',
-      gpa: 'GPA'
+      gpa: 'Average grades'
     }
   })
 }
