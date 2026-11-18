@@ -36,7 +36,7 @@ const ENGLISH_LABELS: CvLabels = {
   experience: 'Experience',
   projects: 'Projects',
   present: 'Present',
-  gpa: 'GPA'
+  gpa: 'Average grades'
 }
 
 const isBlank = (item: ProfileItem): boolean =>

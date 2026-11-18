@@ -22,7 +22,9 @@ export const PersonalSchema = z.object({
   email: z.string(),
   phone: z.string(),
   location: z.string(),
-  website: z.string().default('')
+  website: z.string().default(''),
+  /** Off keeps the address but leaves it off the documents and out of what Claude sees. */
+  showWebsite: z.boolean().default(true)
 })
 export type Personal = z.infer<typeof PersonalSchema>
 
@@ -84,7 +86,7 @@ export type Profile = z.infer<typeof ProfileSchema>
 export function emptyProfile(): Profile {
   return {
     version: 1,
-    personal: { fullName: '', email: '', phone: '', location: '', website: '' },
+    personal: { fullName: '', email: '', phone: '', location: '', website: '', showWebsite: true },
     summary: '',
     experience: [],
     education: [],
@@ -153,7 +155,7 @@ export const CvLabelsSchema = z
     experience: z.string(),
     projects: z.string().default('Projects'),
     present: z.string().describe('Word used for an ongoing period, e.g. "Present" or "nu"'),
-    gpa: z.string().describe('Word or abbreviation for a grade point average, e.g. "GPA" or "Karaktergennemsnit"').default('GPA')
+    gpa: z.string().describe('Words for an average grade, e.g. "Average grades" or "Karaktergennemsnit"').default('Average grades')
   })
   .describe("Section headings in the job posting's language")
 export type CvLabels = z.infer<typeof CvLabelsSchema>

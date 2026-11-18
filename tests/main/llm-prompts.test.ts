@@ -25,6 +25,13 @@ describe('buildTailorInput', () => {
     expect(input).toContain('## Extra instructions\n(none)')
     expect(input).not.toContain('nextIds')
   })
+
+  it('gives Claude the website only while it is switched on', () => {
+    const profile = sampleProfile()
+    expect(buildTailorInput({ profile, jobDescription: JOB_TEXT, instructions: '' })).toContain('https://jane.dev/')
+    profile.personal.showWebsite = false
+    expect(buildTailorInput({ profile, jobDescription: JOB_TEXT, instructions: '' })).not.toContain('https://jane.dev/')
+  })
 })
 
 describe('targetWordCount', () => {

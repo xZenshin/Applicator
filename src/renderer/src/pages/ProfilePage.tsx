@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Card, Divider, Grid, Group, Loader, SimpleGrid, Stack, Text, TextInput, Textarea, Title } from '@mantine/core'
+import { Alert, Box, Button, Card, Checkbox, Divider, Grid, Group, Loader, SimpleGrid, Stack, Text, TextInput, Textarea, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
@@ -11,7 +11,7 @@ import { useAutosave } from '../hooks/useAutosave'
 import { addItem, moveItem, removeItem, updateItem, type ProfileItem } from '../lib/profile-edit'
 import { profileCvHtml } from '../lib/render'
 
-const PERSONAL_FIELDS: { key: keyof Personal; label: string; placeholder?: string }[] = [
+const PERSONAL_FIELDS: { key: Exclude<keyof Personal, 'showWebsite'>; label: string; placeholder?: string }[] = [
   { key: 'fullName', label: 'Full name' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
@@ -106,9 +106,16 @@ export default function ProfilePage(): React.JSX.Element {
                   label={f.label}
                   placeholder={f.placeholder}
                   value={profile.personal[f.key]}
+                  disabled={f.key === 'website' && !profile.personal.showWebsite}
                   onChange={(e) => setPersonal({ [f.key]: e.currentTarget.value })}
                 />
               ))}
+              <Checkbox
+                mt={32}
+                label="Show website on the CV and letter"
+                checked={profile.personal.showWebsite}
+                onChange={(e) => setPersonal({ showWebsite: e.currentTarget.checked })}
+              />
             </SimpleGrid>
           </Card>
 

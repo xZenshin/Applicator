@@ -35,10 +35,19 @@ describe('renderCvHtml', () => {
     expect(named('Cher')).toBe('Cher')
   })
 
-  it('lists location, phone, email and website separated by bars', () => {
+  it('puts location and phone on one line, and email and website on the next', () => {
     const html = renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' })
     expect(contactLine(html)).toBe(
-      'Copenhagen, Denmark | +45 12 34 56 78 | jane@example.com | <a href="https://jane.dev/">jane.dev</a>'
+      'Copenhagen, Denmark | +45 12 34 56 78<br>jane@example.com | <a href="https://jane.dev/">jane.dev</a>'
+    )
+  })
+
+  it('leaves no empty line when one of the two contact lines has nothing in it', () => {
+    const profile = sampleProfile()
+    profile.personal.location = ''
+    profile.personal.phone = ''
+    expect(contactLine(renderCvHtml(profile, sampleCv(), { language: 'en' }))).toBe(
+      'jane@example.com | <a href="https://jane.dev/">jane.dev</a>'
     )
   })
 
@@ -54,7 +63,7 @@ describe('renderCvHtml', () => {
 
   it('shows a degree as its title, GPA, years and university, and nothing more', () => {
     const html = visible(renderCvHtml(sampleProfile(), sampleCv(), { language: 'en' }))
-    expect(html).toContain('MSc in Computer Science GPA 10.5 · 2016 – 2018')
+    expect(html).toContain('MSc in Computer Science Average grades 10.5 · 2016 – 2018')
     expect(html).toContain('DTU')
   })
 
@@ -67,7 +76,7 @@ describe('renderCvHtml', () => {
     profile.education[0].gpa = ''
     const none = visible(renderCvHtml(profile, sampleCv(), { language: 'en' }))
     expect(none).toContain('MSc in Computer Science 2016 – 2018')
-    expect(none).not.toContain('GPA')
+    expect(none).not.toContain('Average grades')
   })
 
   it('shows a project as its name, description and technologies, after experience', () => {
@@ -231,7 +240,7 @@ describe('the website link in the contact line', () => {
     profile.personal.website = website
     return contactLine(renderCvHtml(profile, sampleCv(), { language: 'en' }))
   }
-  const BASE = 'Copenhagen, Denmark | +45 12 34 56 78 | jane@example.com'
+  const BASE = 'Copenhagen, Denmark | +45 12 34 56 78<br>jane@example.com'
 
   it('links to what was pasted and shows it without https://, www. or a trailing slash', () => {
     expect(contactWith('https://www.google.com/')).toBe(`${BASE} | <a href="https://www.google.com/">google.com</a>`)
@@ -255,5 +264,14 @@ describe('the website link in the contact line', () => {
     const profile = sampleProfile()
     const html = renderLetterHtml(profile, sampleLetter(), { language: 'en', date: new Date(2026, 0, 1) })
     expect(contactLine(html)).toContain('<a href="https://jane.dev/">jane.dev</a>')
+  })
+
+  it('leaves the link off the CV and the letter when it is switched off, keeping the address', () => {
+    const profile = sampleProfile()
+    profile.personal.showWebsite = false
+    const letter = renderLetterHtml(profile, sampleLetter(), { language: 'en', date: new Date(2026, 0, 1) })
+    expect(contactLine(renderCvHtml(profile, sampleCv(), { language: 'en' }))).toBe(BASE)
+    expect(contactLine(letter)).toBe(BASE)
+    expect(profile.personal.website).toBe('https://jane.dev/')
   })
 })

@@ -12,7 +12,7 @@ const cvRules = (summaryRule: string): string => `Rules:
 3. Light rewording only: you may rephrase, shorten, reorder or drop bullet points, and echo the posting's terminology where it truthfully describes the candidate's experience. Do not exaggerate.
 4. Write all text (job titles, bullets, degree titles, skill names and categories, project descriptions, the summary and the section labels) in the language of the job posting. Proper nouns, product names and technologies stay as they are.
 ${summaryRule}
-6. labels: the section headings, the word for an ongoing period ("present") and the word for a grade point average ("gpa"), in the posting's language.
+6. labels: the section headings, the word for an ongoing period ("present") and the words for an average grade ("gpa", e.g. "Average grades", not "GPA"), in the posting's language.
 7. Dates, employers, institutions, GPAs and locations are added later from the profile by id, so do not put them in the text fields.
 8. Follow the candidate's extra instructions unless they conflict with these rules.
 9. The CV must fit on one A4 page; as a rough guide, that is about 40 lines of text besides the name and the section headings. Use the page well, but never go over it: when the profile has more relevant material than fits, keep the most relevant.
@@ -94,7 +94,8 @@ const highlightSections = (highlight?: Highlight): string[] =>
 function profileForPrompt(profile: Profile): Omit<Profile, 'version' | 'nextIds'> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { version, nextIds, ...rest } = profile
-  return rest
+  // Blanked so a website that is switched off can't end up in the letter's text.
+  return rest.personal.showWebsite ? rest : { ...rest, personal: { ...rest.personal, website: '' } }
 }
 
 const writingSamples = (style: Style): string =>
