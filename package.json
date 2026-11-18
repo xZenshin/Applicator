@@ -1,6 +1,6 @@
 {
   "name": "applicator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generate tailored CVs and job applications locally with the Claude Code CLI",
   "main": "./out/main/index.js",
   "author": "alsk",
