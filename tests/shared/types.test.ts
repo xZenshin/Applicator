@@ -38,6 +38,11 @@ describe('data shapes', () => {
     expect(ProfileSchema.parse({ ...current, personal: oldPersonal }).personal.showWebsite).toBe(true)
   })
 
+  it('reads a skill saved before proficiency notes with an empty note', () => {
+    const old = { ...sampleProfile(), skills: [{ id: 'skill_01', name: 'Python', category: 'Programming' }] }
+    expect(ProfileSchema.parse(old).skills[0].proficiency).toBe('')
+  })
+
   it('reads a job saved before it could be marked to always include as not marked', () => {
     const current = sampleProfile()
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

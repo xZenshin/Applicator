@@ -53,8 +53,8 @@ export function sampleProfile(): Profile {
       { id: 'edu_01', degree: 'MSc in Computer Science', gpa: '10.5', institution: 'DTU', start: '2016-09', end: '2018-06' }
     ],
     skills: [
-      { id: 'skill_01', name: 'Python', category: 'Programming' },
-      { id: 'skill_02', name: 'SQL', category: 'Programming' }
+      { id: 'skill_01', name: 'Python', category: 'Programming', proficiency: 'Strong: used daily at work for three years' },
+      { id: 'skill_02', name: 'SQL', category: 'Programming', proficiency: '' }
     ],
     projects: [
       { id: 'proj_01', name: 'Stream Monitor', description: 'Dashboard that tracks the health of streaming pipelines.', technologies: 'Python, Kafka' }

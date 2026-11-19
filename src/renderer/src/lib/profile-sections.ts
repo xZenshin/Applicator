@@ -7,6 +7,9 @@ export interface FieldDescriptor {
   label: string
   kind: FieldKind
   placeholder?: string
+  description?: string
+  /** Starting height of a textarea. */
+  rows?: number
 }
 
 export const SECTION_TITLES: Record<SectionKey, string> = {
@@ -48,7 +51,15 @@ export const SECTION_FIELDS: Record<SectionKey, FieldDescriptor[]> = {
   ],
   skills: [
     { key: 'name', label: 'Skill', kind: 'text' },
-    { key: 'category', label: 'Category', kind: 'text' }
+    { key: 'category', label: 'Category', kind: 'text' },
+    {
+      key: 'proficiency',
+      label: 'Proficiency',
+      description: 'Only Claude sees this: how well you know the skill and where you have used it.',
+      placeholder: 'e.g. Strong: used daily in production for two years / Basic: one university course',
+      kind: 'textarea',
+      rows: 1
+    }
   ]
 }
 

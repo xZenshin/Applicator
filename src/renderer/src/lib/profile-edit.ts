@@ -12,7 +12,7 @@ function blankItem(section: SectionKey, id: string): ProfileItem {
     case 'projects':
       return { id, name: '', description: '', technologies: '' }
     case 'skills':
-      return { id, name: '', category: '' }
+      return { id, name: '', category: '', proficiency: '' }
   }
 }
 

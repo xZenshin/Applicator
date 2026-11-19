@@ -52,7 +52,7 @@ describe('isProfileUsable', () => {
     expect(isProfileUsable(emptyProfile())).toBe(false)
     const named = { ...emptyProfile(), personal: { ...emptyProfile().personal, fullName: 'Jane' } }
     expect(isProfileUsable(named)).toBe(false)
-    expect(isProfileUsable({ ...named, skills: [{ id: 'skill_01', name: 'Python', category: '' }] })).toBe(true)
+    expect(isProfileUsable({ ...named, skills: [{ id: 'skill_01', name: 'Python', category: '', proficiency: '' }] })).toBe(true)
     expect(isProfileUsable(sampleProfile())).toBe(true)
   })
 })

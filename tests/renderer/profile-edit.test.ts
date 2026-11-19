@@ -22,7 +22,7 @@ describe('addItem', () => {
     }
     expect(p.education[0]).toEqual({ id: 'edu_01', degree: '', gpa: '', institution: '', start: '', end: '' })
     expect(p.projects[0]).toEqual({ id: 'proj_01', name: '', description: '', technologies: '' })
-    expect(p.skills[0]).toEqual({ id: 'skill_01', name: '', category: '' })
+    expect(p.skills[0]).toEqual({ id: 'skill_01', name: '', category: '', proficiency: '' })
   })
 })
 

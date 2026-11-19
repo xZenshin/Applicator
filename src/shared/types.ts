@@ -52,7 +52,13 @@ export const EducationItemSchema = z.object({
 })
 export type EducationItem = z.infer<typeof EducationItemSchema>
 
-export const SkillItemSchema = z.object({ id: z.string(), name: z.string(), category: z.string() })
+export const SkillItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  /** How well the candidate knows the skill and where it was used. Only Claude sees it; it never goes on the CV. */
+  proficiency: z.string().default('')
+})
 export type SkillItem = z.infer<typeof SkillItemSchema>
 
 // Defaults: a much earlier version stored projects with other fields.

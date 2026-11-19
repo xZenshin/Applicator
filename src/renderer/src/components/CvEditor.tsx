@@ -1,8 +1,9 @@
-import { ActionIcon, Badge, Card, Checkbox, Group, SimpleGrid, Stack, Text, TextInput, Textarea, Title, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Card, Checkbox, Group, SimpleGrid, Stack, Text, TextInput, Textarea, Tooltip } from '@mantine/core'
 import { SECTION_KEYS, type CvContent, type Profile, type SectionKey } from '../../../shared/types'
 import { moveCvItem, toggleCvItem, updateCvItem, type CvEntry } from '../lib/cv-edit'
 import type { ProfileItem } from '../lib/profile-edit'
 import { SECTION_TITLES, itemLabel } from '../lib/profile-sections'
+import { CollapsibleSection } from './CollapsibleSection'
 import { LinesInput } from './LinesInput'
 
 const CV_FIELDS: Record<SectionKey, { key: string; label: string; kind: 'text' | 'textarea' | 'lines' }[]> = {
@@ -51,8 +52,14 @@ export function CvEditor(props: Props): React.JSX.Element {
         }
 
         return (
-          <Stack key={section} gap="xs">
-            <Title order={4}>{SECTION_TITLES[section]}</Title>
+          <CollapsibleSection
+            key={section}
+            title={SECTION_TITLES[section]}
+            count={`${selected.length} of ${profileItems.length}`}
+            storageKey={`applicator.review.collapsed.${section}`}
+            order={4}
+            gap="xs"
+          >
             {selected.map((entry, index) => {
               const source = byId.get(entry.id)
               return (
@@ -131,7 +138,7 @@ export function CvEditor(props: Props): React.JSX.Element {
             {unselected.map((item) => (
               <Checkbox key={item.id} disabled={props.disabled} checked={false} onChange={() => toggle(item.id)} label={<Text c="dimmed" size="sm">{itemLabel(section, item)}</Text>} />
             ))}
-          </Stack>
+          </CollapsibleSection>
         )
       })}
     </Stack>

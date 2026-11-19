@@ -6,6 +6,10 @@ const SUMMARY_RULE = '5. summary: 2-4 sentences based on the profile summary and
 /** A CV sent without a letter: the summary at the top has to do the letter's job. */
 const CV_ONLY_SUMMARY_RULE = `5. summary: this CV is sent without an application letter, so the summary also does the letter's job. Write 6-8 sentences (about 130-160 words) in the first person, in the candidate's own voice as shown in the writing samples, in this order: who the candidate is and their strongest qualification for this job; their most relevant experience, told concretely, and what it taught them; other relevant experience; what they want to work on; and why they want this job at this company. Base the motivation on the posting and on the candidate's own ties to the company found in the profile (for example having worked there), and never state details about the company that the posting does not give. Never copy sentences from the writing samples. If there is text the candidate wrote for this application, build the summary on it: you may improve its wording and adapt it to the posting, but keep its points. Facts in that text count as the candidate's own, like facts in the profile, but use them in the summary only.`
 
+/** Skills carry the candidate's own note on how well they know them; it steers selection and wording but is never shown. */
+const PROFICIENCY_RULE =
+  "A skill's proficiency field is the candidate's own note, for you only, on how well they know the skill and where they used it. Use it to judge how relevant and strong each skill is: when skills compete for space, prefer those the candidate knows well, and never present a skill as stronger than its note says (for example, a skill used only in coursework is not professional experience). An empty note says nothing either way."
+
 const cvRules = (summaryRule: string): string => `Rules:
 1. Use only information from the candidate profile. Never add skills, tools, employers, numbers, achievements or responsibilities that are not in the profile. If the posting asks for something the candidate lacks, leave it out.
 2. Select only the items that are relevant to this posting. Reference each one by its exact id. Never output an id that is not in the profile, and never move an id to a different section than the one it comes from. Within each section, order items from most to least relevant.
@@ -19,12 +23,13 @@ ${summaryRule}
 10. Education is kept short. degree: the title in short form, e.g. "MSc in Computer Science"; add nothing else.
 11. Projects are items like the others: select the relevant ones by id. name: as in the profile. description: one or two sentences. technologies: a comma-separated list using only technologies listed for that project, most relevant first.
 12. Do not list a project that describes the same work as a job on the CV: keep that work under the job, whose text may use details from the project. A project that is related to a job but is separate work may stay.
-13. A job with alwaysInclude: true must be on the CV, even if it is not very relevant to the posting; this overrides rule 2. Keep it short if it is less relevant.`
+13. A job with alwaysInclude: true must be on the CV, even if it is not very relevant to the posting; this overrides rule 2. Keep it short if it is less relevant.
+14. ${PROFICIENCY_RULE} Never copy the proficiency notes into the CV: a skill's name stays a short name.`
 
 const LETTER_RULES = `Rules:
 1. Write in the posting's language, given as job.language in the job analysis.
 2. Match the candidate's own writing: mirror the samples' tone, formality, sentence length, structure, number of paragraphs, and their greeting and sign-off conventions. Aim for the target length. Never copy sentences from the samples; write new text in the same voice. If there are no samples, write in a warm, professional and concrete style.
-3. Use only facts found in the profile, the tailored CV or the text the candidate wrote for this application. Never invent experience, skills, numbers or achievements, and never state details about the company that the posting does not give.
+3. Use only facts found in the profile, the tailored CV or the text the candidate wrote for this application. Never invent experience, skills, numbers or achievements, and never state details about the company that the posting does not give. ${PROFICIENCY_RULE}
 4. Connect the candidate's most relevant experience to the posting's key requirements with specific examples rather than generic claims.
 5. greeting: the salutation line; use the contact person's name if the posting gives one. paragraphs: the body only, without greeting or sign-off. signOff: the closing phrase only (e.g. "Kind regards,"), without the candidate's name, which is added afterwards.
 6. If there is text the candidate wrote for this application, build the letter on it: use what fits the posting, put it where it reads best and write the rest around it, so the letter reads as one piece. If it is an unfinished letter, finish it. You may improve its wording and adapt it to the posting, but keep its points; parts that do not fit the posting may be left out. The target length still applies.

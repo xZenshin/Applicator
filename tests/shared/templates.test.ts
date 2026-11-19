@@ -123,7 +123,7 @@ describe('renderCvHtml', () => {
 
   it('lists skills as one bullet per category, in order of first appearance', () => {
     const profile = sampleProfile()
-    profile.skills.push({ id: 'skill_03', name: 'Git', category: '' })
+    profile.skills.push({ id: 'skill_03', name: 'Git', category: '', proficiency: '' })
     const cv = {
       ...sampleCv(),
       skills: [
