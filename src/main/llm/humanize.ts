@@ -77,9 +77,12 @@ export function changedPieces(before: Piece[], after: Piece[]): Piece[] {
   return after.filter((p) => !old.has(norm(p.text)))
 }
 
-/** A rewrite that grew this much is not trusted: it could push the CV onto a second page. */
-function tooLong(original: string, rewrite: string): boolean {
-  return rewrite.length > original.length * 1.1 + 20
+/**
+ * A CV piece may not grow at all: nothing measures the page after a revision's polish, so growth could push it onto a
+ * second page. A letter paragraph gets a little slack; the letter has a target length, not a hard limit.
+ */
+export function tooLong(key: string, original: string, rewrite: string): boolean {
+  return key.startsWith('letter:') ? rewrite.length > original.length * 1.1 + 20 : rewrite.length > original.length
 }
 
 /** Rewrites the pieces; returns only usable rewrites, by key. No pieces, no call. */
@@ -103,7 +106,7 @@ export async function humanizePieces(a: {
   for (const { key, text } of out.pieces) {
     const original = sent.get(key)
     const clean = text.replace(/[⟦⟧]/g, '').trim()
-    if (original === undefined || !clean || tooLong(original, clean)) continue
+    if (original === undefined || !clean || tooLong(key, original, clean)) continue
     rewrites.set(key, clean)
   }
   return rewrites
@@ -111,12 +114,18 @@ export async function humanizePieces(a: {
 
 const POLISH_FAILED = 'The wording could not be polished this time, so the text is as Claude first wrote it.'
 
-/** A malformed answer only costs the polish; cancelling, limits and login problems still stop the operation. */
+/**
+ * Failures that stop the whole operation even here: the user cancelled, or has to act (log in, wait for the limit,
+ * fix the Claude path). Anything else (a malformed answer, a timeout, a CLI or API error) only costs the polish,
+ * so the CV and letter already written are not thrown away.
+ */
+const FATAL_KINDS: ReadonlySet<string> = new Set(['cancelled', 'not_logged_in', 'not_subscription', 'usage_limit', 'not_found'])
+
 async function orWarn<T>(fallback: T, fn: () => Promise<T>): Promise<{ value: T; warnings: string[] }> {
   try {
     return { value: await fn(), warnings: [] }
   } catch (e) {
-    if (e instanceof ClaudeError && e.kind === 'invalid_output') return { value: fallback, warnings: [POLISH_FAILED] }
+    if (e instanceof ClaudeError && !FATAL_KINDS.has(e.kind)) return { value: fallback, warnings: [POLISH_FAILED] }
     throw e
   }
 }
@@ -161,10 +170,10 @@ export async function humanizeLetterRevision(a: {
   after: ApplicationLetter
   language: string
   style: Style
-}): Promise<ApplicationLetter> {
+}): Promise<{ letter: ApplicationLetter; warnings: string[] }> {
   const pieces = changedPieces(letterPieces(a.before), letterPieces(a.after))
-  const { value: rewrites } = await orWarn(new Map<string, string>(), () =>
+  const { value: rewrites, warnings } = await orWarn(new Map<string, string>(), () =>
     humanizePieces({ run: a.run, pieces, language: a.language, style: a.style })
   )
-  return applyLetterPieces(a.after, rewrites)
+  return { letter: applyLetterPieces(a.after, rewrites), warnings }
 }

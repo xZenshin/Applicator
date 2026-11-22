@@ -114,9 +114,9 @@ export default function ReviewPage(): React.JSX.Element {
   const reviseLetter = whileRevising('letter', async (instruction, highlight) => {
     const previous = draft.letter
     if (!previous) return
-    const letter = await api.llm.reviseLetter({ id, cv: draft.cv, letter: previous, instruction, highlight })
+    const result = await api.llm.reviseLetter({ id, cv: draft.cv, letter: previous, instruction, highlight })
     setUndo((u) => ({ ...u, letter: previous }))
-    update((d) => ({ ...d, letter }))
+    update((d) => ({ ...d, letter: result.letter, warnings: [...d.warnings, ...result.warnings] }))
     replaced()
   })
 

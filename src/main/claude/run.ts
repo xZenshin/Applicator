@@ -40,13 +40,11 @@ function childEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return Object.fromEntries(Object.entries(env).filter(([k]) => !STRIPPED_ENV.has(k.toUpperCase())))
 }
 
-export function buildClaudeArgs(jsonSchema: object, systemPromptFile: string, model: string): string[] {
+/** The flags every print-mode call shares; formatArgs chooses the input and output format. */
+function printArgs(formatArgs: string[], systemPromptFile: string, model: string): string[] {
   const args = [
     '-p',
-    '--output-format',
-    'json',
-    '--json-schema',
-    JSON.stringify(jsonSchema),
+    ...formatArgs,
     '--system-prompt-file',
     systemPromptFile,
     '--safe-mode',
@@ -55,6 +53,15 @@ export function buildClaudeArgs(jsonSchema: object, systemPromptFile: string, mo
     '--no-session-persistence'
   ]
   return model ? [...args, '--model', model] : args
+}
+
+export function buildClaudeArgs(jsonSchema: object, systemPromptFile: string, model: string): string[] {
+  return printArgs(['--output-format', 'json', '--json-schema', JSON.stringify(jsonSchema)], systemPromptFile, model)
+}
+
+/** stream-json input is the only way to hand the CLI a PDF; it requires stream-json output. */
+export function buildChatArgs(systemPromptFile: string, model: string): string[] {
+  return printArgs(['--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose'], systemPromptFile, model)
 }
 
 interface ProcessResult {
@@ -158,23 +165,35 @@ function interpret(res: ProcessResult): unknown {
   throw new ClaudeError('invalid_output', CLAUDE_MESSAGES.invalid_output)
 }
 
-/** Runs one print-mode request and returns the CLI's structured output (not yet validated). */
-export async function runClaude(req: ClaudeRunRequest): Promise<unknown> {
+type PrintRequest = Pick<ClaudeRunRequest, 'command' | 'systemPrompt' | 'model' | 'cwd' | 'timeoutMs' | 'signal' | 'env'>
+
+/** One print-mode run: the system prompt goes in a temporary file (removed afterwards), the input on stdin. */
+async function runPrint<T>(
+  req: PrintRequest,
+  args: (systemPromptFile: string) => string[],
+  input: string,
+  read: (res: ProcessResult) => T
+): Promise<T> {
   await mkdir(req.cwd, { recursive: true })
   const systemPromptFile = join(tmpdir(), `applicator-sys-${randomBytes(6).toString('hex')}.txt`)
   await writeFile(systemPromptFile, req.systemPrompt, 'utf8')
   try {
-    const res = await exec(req.command, buildClaudeArgs(req.jsonSchema, systemPromptFile, req.model), {
+    const res = await exec(req.command, args(systemPromptFile), {
       cwd: req.cwd,
       env: childEnv(req.env ?? process.env),
-      input: req.input,
+      input,
       timeoutMs: req.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       signal: req.signal
     })
-    return interpret(res)
+    return read(res)
   } finally {
     await rm(systemPromptFile, { force: true }).catch(() => {})
   }
+}
+
+/** Runs one print-mode request and returns the CLI's structured output (not yet validated). */
+export function runClaude(req: ClaudeRunRequest): Promise<unknown> {
+  return runPrint(req, (file) => buildClaudeArgs(req.jsonSchema, file, req.model), req.input, interpret)
 }
 
 /** A piece of a chat message: text, or a PDF Claude reads itself (scanned pages included). */
@@ -192,25 +211,6 @@ export interface ClaudeChatRequest {
   timeoutMs?: number
   signal?: AbortSignal
   env?: NodeJS.ProcessEnv
-}
-
-/** stream-json input is the only way to hand the CLI a PDF; it requires stream-json output. */
-export function buildChatArgs(systemPromptFile: string, model: string): string[] {
-  const args = [
-    '-p',
-    '--input-format',
-    'stream-json',
-    '--output-format',
-    'stream-json',
-    '--verbose',
-    '--system-prompt-file',
-    systemPromptFile,
-    '--safe-mode',
-    '--tools',
-    '',
-    '--no-session-persistence'
-  ]
-  return model ? [...args, '--model', model] : args
 }
 
 /** The stdin line: one user message in the Messages API format. */
@@ -250,22 +250,8 @@ function interpretChat(res: ProcessResult): string {
 }
 
 /** Runs one print-mode request and returns Claude's reply as plain text. */
-export async function runClaudeChat(req: ClaudeChatRequest): Promise<string> {
-  await mkdir(req.cwd, { recursive: true })
-  const systemPromptFile = join(tmpdir(), `applicator-sys-${randomBytes(6).toString('hex')}.txt`)
-  await writeFile(systemPromptFile, req.systemPrompt, 'utf8')
-  try {
-    const res = await exec(req.command, buildChatArgs(systemPromptFile, req.model), {
-      cwd: req.cwd,
-      env: childEnv(req.env ?? process.env),
-      input: chatInputLine(req.content),
-      timeoutMs: req.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-      signal: req.signal
-    })
-    return interpretChat(res)
-  } finally {
-    await rm(systemPromptFile, { force: true }).catch(() => {})
-  }
+export function runClaudeChat(req: ClaudeChatRequest): Promise<string> {
+  return runPrint(req, (file) => buildChatArgs(file, req.model), chatInputLine(req.content), interpretChat)
 }
 
 export async function getAuthStatus(

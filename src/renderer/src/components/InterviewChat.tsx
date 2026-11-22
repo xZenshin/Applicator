@@ -81,9 +81,12 @@ export function InterviewChat(props: {
       update(await api.interview.send(appId, sessionId, text))
     } catch (e) {
       // The message is saved before Claude is asked, unless the call failed before that (e.g. Claude was busy).
+      // An earlier failed reply can leave a user message last, so compare the text, not just the role.
       const fresh = await api.interview.getSession(appId, sessionId).catch(() => null)
       if (fresh) update(fresh)
-      if (text && fresh?.messages.at(-1)?.role !== 'user' && mounted.current) setDraft(text)
+      const last = fresh?.messages.at(-1)
+      const saved = last?.role === 'user' && last.text === text
+      if (text && !saved && mounted.current) setDraft(text)
       if (mounted.current) setError(errorKind(e) === 'cancelled' ? 'Cancelled.' : errorMessage(e))
     } finally {
       if (mounted.current) {
@@ -162,6 +165,8 @@ export function InterviewChat(props: {
             {session.focus && ` · Focus: ${session.focus}`}
           </Text>
         </Stack>
+        {/* Hidden while Claude answers: the reply would be saved into a session the user just deleted. */}
+        {!pending && (
         <ConfirmDelete
           question="Move this practice session to the Recycle Bin?"
           onConfirm={() =>
@@ -170,6 +175,7 @@ export function InterviewChat(props: {
             )
           }
         />
+        )}
       </Group>
 
       <div className="k-chat">

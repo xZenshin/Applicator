@@ -80,7 +80,7 @@ export interface Api {
       letter: ApplicationLetter
       instruction: string
       highlight?: Highlight
-    }): Promise<ApplicationLetter>
+    }): Promise<{ letter: ApplicationLetter; warnings: string[] }>
     cancel(): Promise<void>
     onProgress(cb: (s: GenerationStage) => void): () => void
     /** True while Claude is generating or revising, false when it is done. */

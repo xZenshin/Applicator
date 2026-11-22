@@ -87,8 +87,9 @@ describe('pieces', () => {
 
 describe('humanizePieces', () => {
   const pieces: Piece[] = [
-    { key: 'a', kind: 'CV summary', text: 'Short text.' },
-    { key: 'b', kind: 'CV bullet', text: 'Another short text.' }
+    { key: 'summary', kind: 'CV summary', text: 'A rather long summary text.' },
+    { key: 'exp:exp_01:0', kind: 'CV bullet', text: 'Another short text.' },
+    { key: 'letter:0', kind: 'Application letter, paragraph 1', text: 'A letter paragraph.' }
   ]
 
   it('makes no call without pieces', async () => {
@@ -101,14 +102,18 @@ describe('humanizePieces', () => {
     const { run, calls } = fakeRun({
       [HUMANIZE_SYSTEM]: {
         pieces: [
-          { key: 'a', text: 'Short ⟦text⟧, plainer.' },
-          { key: 'b', text: 'This rewrite is far, far longer than the original sentence ever was.' },
+          { key: 'summary', text: 'A ⟦shorter⟧ summary.' },
+          { key: 'exp:exp_01:0', text: 'Another short text!!' }, // one character longer: a CV piece may not grow
+          { key: 'letter:0', text: 'A letter paragraph, a bit longer.' }, // a letter paragraph may grow a little
           { key: 'zzz', text: 'Not asked for.' }
         ]
       }
     })
     const out = await humanizePieces({ run, pieces, language: 'da', style: sampleStyle() })
-    expect([...out]).toEqual([['a', 'Short text, plainer.']])
+    expect([...out]).toEqual([
+      ['summary', 'A shorter summary.'],
+      ['letter:0', 'A letter paragraph, a bit longer.']
+    ])
     expect(calls[0].input).toContain('## Language of the posting\nda')
     expect(calls[0].input).toContain(sampleStyle().samples[0].text.slice(0, 40))
   })
@@ -155,6 +160,46 @@ describe('polish in generation', () => {
     expect(draft.warnings.some((w) => w.includes('could not be polished'))).toBe(true)
   })
 
+  it('keeps the written application when the polish times out', async () => {
+    await seed(true)
+    const { run } = fakeRun({
+      [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
+      [LETTER_SYSTEM]: sampleLetter(),
+      [HUMANIZE_SYSTEM]: new ClaudeError('timeout', 'Claude did not answer within 5 minutes.')
+    })
+    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() })
+    const { draft } = await loadApplication(dataDir, meta.id)
+    expect(draft.letter).toEqual(sampleLetter())
+    expect(draft.warnings.some((w) => w.includes('could not be polished'))).toBe(true)
+  })
+
+  it('still stops when the user has to log in again', async () => {
+    await seed(true)
+    const { run } = fakeRun({
+      [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
+      [LETTER_SYSTEM]: sampleLetter(),
+      [HUMANIZE_SYSTEM]: new ClaudeError('not_logged_in', 'Log in.')
+    })
+    const err = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() }).catch((e) => e)
+    expect(err.kind).toBe('not_logged_in')
+  })
+
+  it('keeps the fitted CV, without shortening again, when the polished one runs over the page', async () => {
+    await seed(true)
+    const { run, calls } = fakeRun({
+      [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
+      [LETTER_SYSTEM]: sampleLetter(),
+      [HUMANIZE_SYSTEM]: shout
+    })
+    // Pretend the polished summary (upper-cased first word) wraps onto a second page.
+    const measureCv = async (_p: unknown, cv: CvContent): Promise<number> => (cv.summary.startsWith('DATA ') ? 5000 : 500)
+    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', measureCv, onStage: () => {}, now: new Date() })
+    const { draft } = await loadApplication(dataDir, meta.id)
+    expect(draft.cv).toEqual(sampleCv())
+    expect(draft.letter?.paragraphs[0].startsWith('I ')).toBe(true) // the letter keeps its polish ("I" stays "I")
+    expect(calls.map((c) => c.system)).toEqual([TAILOR_SYSTEM, LETTER_SYSTEM, HUMANIZE_SYSTEM]) // no shortening calls
+  })
+
   it('still stops when the polish is cancelled', async () => {
     await seed(true)
     const { run } = fakeRun({
@@ -184,7 +229,8 @@ describe('polish in revisions', () => {
 
     const out = await runLetterRevision({ run, dataDir, id, cv: sampleCv(), letter: current, instruction: 'Warmer ending' })
     expect(sentPieces(calls[1].input).map((p) => p.key)).toEqual(['letter:2'])
-    expect(out.paragraphs).toEqual(['my own edited opening.', sampleLetter().paragraphs[1], 'LEANING in, I would love to talk.'])
+    expect(out.letter.paragraphs).toEqual(['my own edited opening.', sampleLetter().paragraphs[1], 'LEANING in, I would love to talk.'])
+    expect(out.warnings).toEqual([])
   })
 
   it('polishes only the CV text the revision wrote, and makes no call when it wrote none', async () => {
@@ -207,7 +253,7 @@ describe('polish in revisions', () => {
     const id = await app()
     const revised = { ...sampleLetter(), paragraphs: ['changed.', ...sampleLetter().paragraphs.slice(1)] }
     const { run, calls } = fakeRun({ [LETTER_REVISE_SYSTEM]: revised })
-    expect(await runLetterRevision({ run, dataDir, id, cv: sampleCv(), letter: sampleLetter(), instruction: 'x' })).toEqual(revised)
+    expect(await runLetterRevision({ run, dataDir, id, cv: sampleCv(), letter: sampleLetter(), instruction: 'x' })).toEqual({ letter: revised, warnings: [] })
     expect(calls).toHaveLength(1)
   })
 })

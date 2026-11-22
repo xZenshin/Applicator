@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -179,6 +179,17 @@ describe('sendInterviewMessage', () => {
     expect(retried.messages.map((m) => m.role)).toEqual(['user', 'assistant'])
     expect(calls[1].system).toBe(FREE_SYSTEM)
     expect(calls[1].text).toContain('<candidate>\nAsk me something\n</candidate>')
+  })
+
+  it('does not bring back a session deleted while Claude was answering', async () => {
+    const s = await createSession(dataDir, appId, { mode: 'free', feedback: 'end', focus: '' }, now())
+    const path = sessionPath(dataDir, appId, s.id)
+    const chat: ChatFn = async () => {
+      await rm(path) // the user deletes the session mid-reply
+      return 'Late reply.'
+    }
+    expect((await failure(sendInterviewMessage({ chat, dataDir, appId, sessionId: s.id, text: 'Hi', now }))).kind).toBe('session_missing')
+    expect(existsSync(path)).toBe(false)
   })
 
   it('refuses an empty message when there is nothing to answer', async () => {

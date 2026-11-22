@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import { existsSync } from 'node:fs'
 import { copyFile, mkdir, open, readdir, readFile, rm, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { AppError } from '../../shared/errors'
@@ -141,6 +142,15 @@ export async function saveSession(dataDir: string, appId: string, s: InterviewSe
   const next = InterviewSessionSchema.parse({ ...s, updatedAt: now.toISOString() })
   await writeJsonAtomic(sessionPath(dataDir, appId, s.id), next)
   return next
+}
+
+/**
+ * Saves a session that must still exist. A reply can take minutes; if the user deleted the session (or the whole
+ * application) meanwhile, writing would bring it back, because writes create missing folders.
+ */
+export async function updateSession(dataDir: string, appId: string, s: InterviewSession, now: Date): Promise<InterviewSession> {
+  if (!existsSync(sessionPath(dataDir, appId, s.id))) missingSession(s.id)()
+  return saveSession(dataDir, appId, s, now)
 }
 
 export async function createSession(dataDir: string, appId: string, n: NewInterviewSession, now: Date): Promise<InterviewSession> {

@@ -118,8 +118,10 @@ export function SectionEditor(props: Props): React.JSX.Element {
   const fields = SECTION_FIELDS[section]
   const wide = fields.filter((f) => f.kind === 'lines' || f.kind === 'textarea')
   const narrow = fields.filter((f) => !wide.includes(f))
-  // Short items such as skills get small cards without a heading of their own.
-  const compact = narrow.every((f) => f.kind === 'text') && narrow.length <= 2
+  // Short items such as skills get small cards without a heading of their own. A one-row note (a skill's
+  // proficiency) keeps a card short; a real text area (a project's description) does not.
+  const compact =
+    narrow.every((f) => f.kind === 'text') && narrow.length <= 2 && wide.every((f) => f.kind === 'textarea' && f.rows === 1)
   return (
     <CollapsibleSection
       title={SECTION_TITLES[section]}

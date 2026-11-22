@@ -94,7 +94,7 @@ export async function runLetterRevision(a: {
   letter: ApplicationLetter
   instruction: string
   highlight?: Highlight
-}): Promise<ApplicationLetter> {
+}): Promise<{ letter: ApplicationLetter; warnings: string[] }> {
   const record = await loadApplication(a.dataDir, a.id)
   const style = await loadStyle(a.dataDir)
   const revised = await reviseLetter({
@@ -110,6 +110,6 @@ export async function runLetterRevision(a: {
     ownText: record.draft.ownText,
     highlight: a.highlight
   })
-  if (!style.humanize) return revised
+  if (!style.humanize) return { letter: revised, warnings: [] }
   return humanizeLetterRevision({ run: a.run, before: a.letter, after: revised, language: record.draft.job.language, style })
 }

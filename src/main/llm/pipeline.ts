@@ -93,18 +93,14 @@ export async function generateApplication(a: {
   if (language.warning) warnings.push(language.warning)
   const job = { ...tailored.job, language: language.language }
 
-  const addWarnings = (ws: string[]): void => {
-    // Shortening rounds can leave out the same job more than once; say so once.
-    for (const w of ws) if (!warnings.includes(w)) warnings.push(w)
-  }
-  const fit = async (cv: CvContent): Promise<CvContent> => {
-    if (!a.measureCv) return cv
+  let cv = restored.cv
+  if (a.measureCv) {
     const fitted = await fitOnePage({ ...a, job, cv, cvOnly, measureCv: a.measureCv })
-    addWarnings(fitted.warnings)
-    return fitted.cv
+    cv = fitted.cv
+    // Both shortening rounds can leave out the same job; say so once.
+    for (const w of fitted.warnings) if (!warnings.includes(w)) warnings.push(w)
   }
 
-  let cv = await fit(restored.cv)
   let letter: ApplicationLetter | null = null
   if (!a.cvOnly) {
     a.onStage('writing')
@@ -119,9 +115,12 @@ export async function generateApplication(a: {
     a.onStage('polishing')
     const polished = await humanizeApplication({ run: a.run, cv, letter, language: job.language, style: a.style })
     letter = polished.letter
-    addWarnings(polished.warnings)
-    // The polish never lengthens text on purpose, but the page is checked again; this costs no call when it fits.
-    cv = await fit(polished.cv)
+    warnings.push(...polished.warnings)
+    // The polish rejects CV text that grows, but line breaks can still shift. The CV is not shortened again here: that
+    // could drop items the letter already mentions. If the polished CV runs over and the fitted one did not, keep the fitted one.
+    const overflows = async (c: CvContent): Promise<boolean> =>
+      a.measureCv ? overflowLines(await a.measureCv(a.profile, c, job.language)) > 0 : false
+    if (!(await overflows(polished.cv)) || (await overflows(cv))) cv = polished.cv
   }
   return { job, cv, letter, warnings }
 }

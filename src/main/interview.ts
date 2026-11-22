@@ -10,7 +10,7 @@ import {
 } from './llm/interview-prompts'
 import type { ChatFn } from './llm/run-fn'
 import { loadApplication } from './storage/applications'
-import { loadMaterials, loadSession, readPdfs, saveSession } from './storage/interview'
+import { loadMaterials, loadSession, readPdfs, updateSession } from './storage/interview'
 
 /** Everything Claude sees besides the conversation: the posting, what was sent, and the prep material. */
 async function loadContext(dataDir: string, appId: string): Promise<InterviewContext> {
@@ -54,7 +54,7 @@ export async function sendInterviewMessage(a: {
   const text = a.text.trim()
   if (text) {
     const message = { role: 'user' as const, text, at: a.now().toISOString() }
-    session = await saveSession(a.dataDir, a.appId, { ...session, messages: [...session.messages, message] }, a.now())
+    session = await updateSession(a.dataDir, a.appId, { ...session, messages: [...session.messages, message] }, a.now())
   } else {
     const last = session.messages.at(-1)
     const canOpen = session.mode === 'interviewer' && !last
@@ -64,7 +64,7 @@ export async function sendInterviewMessage(a: {
   const ctx = await loadContext(a.dataDir, a.appId)
   const reply = await a.chat({ system: systemFor(session), content: buildReplyContent(ctx, session) })
   const message = { role: 'assistant' as const, text: withoutRoleTags(reply), at: a.now().toISOString() }
-  return saveSession(a.dataDir, a.appId, { ...session, messages: [...session.messages, message] }, a.now())
+  return updateSession(a.dataDir, a.appId, { ...session, messages: [...session.messages, message] }, a.now())
 }
 
 export async function writeInterviewReport(a: {
@@ -80,5 +80,5 @@ export async function writeInterviewReport(a: {
   }
   const ctx = await loadContext(a.dataDir, a.appId)
   const text = await a.chat({ system: REPORT_SYSTEM, content: buildReportContent(ctx, session) })
-  return saveSession(a.dataDir, a.appId, { ...session, report: { text, at: a.now().toISOString() } }, a.now())
+  return updateSession(a.dataDir, a.appId, { ...session, report: { text, at: a.now().toISOString() } }, a.now())
 }
