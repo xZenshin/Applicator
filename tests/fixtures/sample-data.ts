@@ -80,9 +80,7 @@ export function sampleStyle(): Style {
         active: false
       }
     ],
-    defaultInstructions: 'Keep it under one page.',
-    // Off in the fixture so tests of the other steps don't need a humanize reply; tests/main/humanize.test.ts turns it on.
-    humanize: false
+    defaultInstructions: 'Keep it under one page.'
   })
 }
 

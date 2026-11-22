@@ -72,9 +72,14 @@ describe('settings', () => {
   })
 
   it('round-trips', async () => {
-    const s = { claudePath: 'C:\\claude.exe', model: 'opus' as const, dataDir: '' }
+    const s = { claudePath: 'C:\\claude.exe', model: 'opus' as const, dataDir: '', humanize: false }
     await saveSettings(dir, s)
     expect(await loadSettings(dir)).toEqual(s)
+  })
+
+  it('turns the polish on for settings saved before it existed', async () => {
+    await writeFile(join(dir, 'settings.json'), JSON.stringify({ claudePath: '', model: 'opus', dataDir: '' }))
+    expect((await loadSettings(dir)).humanize).toBe(true)
   })
 })
 

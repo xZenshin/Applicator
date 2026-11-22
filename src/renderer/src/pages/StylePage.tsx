@@ -43,16 +43,6 @@ export default function StylePage(): React.JSX.Element {
         }}
       />
 
-      <Switch
-        label="Polish the wording"
-        description="After Claude writes or revises your CV and application, one more pass removes typical AI writing patterns, such as empty contrasts, triads and sales language, and matches your samples' voice. Revisions only polish the text they changed. Adds about 10–30 seconds. Based on the open-source Humanizer guide."
-        checked={style.humanize}
-        onChange={(e) => {
-          const humanize = e.currentTarget.checked
-          update((s) => ({ ...s, humanize }))
-        }}
-      />
-
       <Stack gap="xs">
         <Title order={3}>Previous applications</Title>
         <Text size="sm" c="dimmed">

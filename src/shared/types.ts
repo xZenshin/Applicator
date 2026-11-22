@@ -120,14 +120,12 @@ export type WritingSample = z.infer<typeof WritingSampleSchema>
 export const StyleSchema = z.object({
   version: z.literal(1),
   samples: z.array(WritingSampleSchema),
-  defaultInstructions: z.string(),
-  /** After writing or revising, one more pass removes typical AI writing patterns (the vendored Humanizer guide). */
-  humanize: z.boolean().default(true)
+  defaultInstructions: z.string()
 })
 export type Style = z.infer<typeof StyleSchema>
 
 export function emptyStyle(): Style {
-  return { version: 1, samples: [], defaultInstructions: '', humanize: true }
+  return { version: 1, samples: [], defaultInstructions: '' }
 }
 
 // ---------- Settings ----------
@@ -137,12 +135,14 @@ export const MODEL_OPTIONS = ['', 'fable', 'opus', 'sonnet', 'haiku'] as const
 export const SettingsSchema = z.object({
   claudePath: z.string(),
   model: z.enum(MODEL_OPTIONS),
-  dataDir: z.string()
+  dataDir: z.string(),
+  /** After writing or revising, one more pass removes typical AI writing patterns (the vendored Humanizer guide). */
+  humanize: z.boolean().default(true)
 })
 export type Settings = z.infer<typeof SettingsSchema>
 
 export function defaultSettings(): Settings {
-  return { claudePath: '', model: '', dataDir: '' }
+  return { claudePath: '', model: '', dataDir: '', humanize: true }
 }
 
 export type ClaudeSource = 'settings' | 'path' | 'local-bin' | 'vscode'

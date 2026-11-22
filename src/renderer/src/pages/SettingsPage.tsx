@@ -1,4 +1,4 @@
-import { Alert, Badge, Button, Card, Group, Loader, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Badge, Button, Card, Group, Loader, Select, Stack, Switch, Text, TextInput, Title } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import type { ConnectionResult, SettingsView } from '../../../shared/api'
 import type { ClaudeSource, Settings } from '../../../shared/types'
@@ -123,6 +123,15 @@ export default function SettingsPage(): React.JSX.Element {
           value={settings.model}
           allowDeselect={false}
           onChange={(value) => save({ model: (value ?? '') as Settings['model'] })}
+        />
+      </Card>
+
+      <Card withBorder padding="lg">
+        <Switch
+          label="Polish the wording"
+          description="After Claude writes or revises your CV and application, one more pass removes typical AI writing patterns, such as empty contrasts, triads and sales language, and matches your writing samples' voice. Revisions only polish the text they changed. Adds about 10–30 seconds. Based on the open-source Humanizer guide."
+          checked={settings.humanize}
+          onChange={(e) => save({ humanize: e.currentTarget.checked })}
         />
       </Card>
 

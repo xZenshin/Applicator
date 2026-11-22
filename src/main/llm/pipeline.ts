@@ -77,6 +77,8 @@ export async function generateApplication(a: {
   ownText?: string
   cvOnly?: boolean
   measureCv?: MeasureCv
+  /** Polish the wording afterwards (Settings). */
+  humanize?: boolean
   onStage: (s: GenerationStage) => void
 }): Promise<{ job: JobInfo; cv: CvContent; letter: ApplicationLetter | null; warnings: string[] }> {
   a.onStage('tailoring')
@@ -111,7 +113,7 @@ export async function generateApplication(a: {
     })
   }
 
-  if (a.style.humanize) {
+  if (a.humanize) {
     a.onStage('polishing')
     const polished = await humanizeApplication({ run: a.run, cv, letter, language: job.language, style: a.style })
     letter = polished.letter

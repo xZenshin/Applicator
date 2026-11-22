@@ -20,6 +20,8 @@ export async function runGeneration(a: {
   ownText?: string
   cvOnly?: boolean
   measureCv?: MeasureCv
+  /** Polish the wording afterwards (Settings). */
+  humanize?: boolean
   onStage: (s: GenerationStage) => void
   now: Date
 }): Promise<ApplicationMeta> {
@@ -44,6 +46,7 @@ export async function runGeneration(a: {
     ownText: a.ownText,
     cvOnly: a.cvOnly,
     measureCv: a.measureCv,
+    humanize: a.humanize,
     onStage: a.onStage
   })
   return createApplication(a.dataDir, {
@@ -65,6 +68,8 @@ export async function runCvRevision(a: {
   cv: CvContent
   instruction: string
   highlight?: Highlight
+  /** Polish the text the revision wrote (Settings). */
+  humanize?: boolean
 }): Promise<{ cv: CvContent; warnings: string[] }> {
   const record = await loadApplication(a.dataDir, a.id)
   const style = await loadStyle(a.dataDir)
@@ -80,7 +85,7 @@ export async function runCvRevision(a: {
     cvOnly,
     highlight: a.highlight
   })
-  if (!style.humanize) return revised
+  if (!a.humanize) return revised
   const language = record.draft.job.language
   const polished = await humanizeCvRevision({ run: a.run, before: a.cv, after: revised.cv, language, style })
   return { cv: polished.cv, warnings: [...revised.warnings, ...polished.warnings] }
@@ -94,6 +99,8 @@ export async function runLetterRevision(a: {
   letter: ApplicationLetter
   instruction: string
   highlight?: Highlight
+  /** Polish the text the revision wrote (Settings). */
+  humanize?: boolean
 }): Promise<{ letter: ApplicationLetter; warnings: string[] }> {
   const record = await loadApplication(a.dataDir, a.id)
   const style = await loadStyle(a.dataDir)
@@ -110,6 +117,6 @@ export async function runLetterRevision(a: {
     ownText: record.draft.ownText,
     highlight: a.highlight
   })
-  if (!style.humanize) return { letter: revised, warnings: [] }
+  if (!a.humanize) return { letter: revised, warnings: [] }
   return humanizeLetterRevision({ run: a.run, before: a.letter, after: revised, language: record.draft.job.language, style })
 }

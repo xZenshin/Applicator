@@ -51,9 +51,9 @@ const shout = (input: string): unknown => ({
   pieces: sentPieces(input).map((p) => ({ key: p.key, text: p.text.replace(/^\S+/, (w) => w.toUpperCase()) }))
 })
 
-async function seed(humanize: boolean): Promise<void> {
+async function seed(): Promise<void> {
   await saveProfile(dataDir, sampleProfile())
-  await saveStyle(dataDir, { ...sampleStyle(), humanize })
+  await saveStyle(dataDir, sampleStyle())
 }
 
 describe('HUMANIZE_SYSTEM', () => {
@@ -121,14 +121,14 @@ describe('humanizePieces', () => {
 
 describe('polish in generation', () => {
   it('polishes the CV and the letter in one call, after the letter is written', async () => {
-    await seed(true)
+    await seed()
     const { run, calls } = fakeRun({
       [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
       [LETTER_SYSTEM]: sampleLetter(),
       [HUMANIZE_SYSTEM]: shout
     })
     const stages: string[] = []
-    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: (s) => stages.push(s), now: new Date() })
+    const meta = await runGeneration({ humanize: true, run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: (s) => stages.push(s), now: new Date() })
     expect(stages).toEqual(['tailoring', 'writing', 'polishing'])
     expect(calls.map((c) => c.system)).toEqual([TAILOR_SYSTEM, LETTER_SYSTEM, HUMANIZE_SYSTEM])
 
@@ -141,51 +141,51 @@ describe('polish in generation', () => {
   })
 
   it('skips the polish when it is turned off', async () => {
-    await seed(false)
+    await seed()
     const { run, calls } = fakeRun({ [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() }, [LETTER_SYSTEM]: sampleLetter() })
-    await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() })
+    await runGeneration({ humanize: false, run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() })
     expect(calls.map((c) => c.system)).not.toContain(HUMANIZE_SYSTEM)
   })
 
   it('keeps the unpolished text with a warning when the answer is malformed', async () => {
-    await seed(true)
+    await seed()
     const { run } = fakeRun({
       [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
       [LETTER_SYSTEM]: sampleLetter(),
       [HUMANIZE_SYSTEM]: new ClaudeError('invalid_output', 'bad')
     })
-    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() })
+    const meta = await runGeneration({ humanize: true, run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() })
     const { draft } = await loadApplication(dataDir, meta.id)
     expect(draft.letter).toEqual(sampleLetter())
     expect(draft.warnings.some((w) => w.includes('could not be polished'))).toBe(true)
   })
 
   it('keeps the written application when the polish times out', async () => {
-    await seed(true)
+    await seed()
     const { run } = fakeRun({
       [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
       [LETTER_SYSTEM]: sampleLetter(),
       [HUMANIZE_SYSTEM]: new ClaudeError('timeout', 'Claude did not answer within 5 minutes.')
     })
-    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() })
+    const meta = await runGeneration({ humanize: true, run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() })
     const { draft } = await loadApplication(dataDir, meta.id)
     expect(draft.letter).toEqual(sampleLetter())
     expect(draft.warnings.some((w) => w.includes('could not be polished'))).toBe(true)
   })
 
   it('still stops when the user has to log in again', async () => {
-    await seed(true)
+    await seed()
     const { run } = fakeRun({
       [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
       [LETTER_SYSTEM]: sampleLetter(),
       [HUMANIZE_SYSTEM]: new ClaudeError('not_logged_in', 'Log in.')
     })
-    const err = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() }).catch((e) => e)
+    const err = await runGeneration({ humanize: true, run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() }).catch((e) => e)
     expect(err.kind).toBe('not_logged_in')
   })
 
   it('keeps the fitted CV, without shortening again, when the polished one runs over the page', async () => {
-    await seed(true)
+    await seed()
     const { run, calls } = fakeRun({
       [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
       [LETTER_SYSTEM]: sampleLetter(),
@@ -193,7 +193,7 @@ describe('polish in generation', () => {
     })
     // Pretend the polished summary (upper-cased first word) wraps onto a second page.
     const measureCv = async (_p: unknown, cv: CvContent): Promise<number> => (cv.summary.startsWith('DATA ') ? 5000 : 500)
-    const meta = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', measureCv, onStage: () => {}, now: new Date() })
+    const meta = await runGeneration({ humanize: true, run, dataDir, jobDescription: JOB_TEXT, instructions: '', measureCv, onStage: () => {}, now: new Date() })
     const { draft } = await loadApplication(dataDir, meta.id)
     expect(draft.cv).toEqual(sampleCv())
     expect(draft.letter?.paragraphs[0].startsWith('I ')).toBe(true) // the letter keeps its polish ("I" stays "I")
@@ -201,13 +201,13 @@ describe('polish in generation', () => {
   })
 
   it('still stops when the polish is cancelled', async () => {
-    await seed(true)
+    await seed()
     const { run } = fakeRun({
       [TAILOR_SYSTEM]: { job: sampleJob(), cv: sampleCv() },
       [LETTER_SYSTEM]: sampleLetter(),
       [HUMANIZE_SYSTEM]: new ClaudeError('cancelled', 'Cancelled.')
     })
-    const err = await runGeneration({ run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() }).catch((e) => e)
+    const err = await runGeneration({ humanize: true, run, dataDir, jobDescription: JOB_TEXT, instructions: '', onStage: () => {}, now: new Date() }).catch((e) => e)
     expect(err).toBeInstanceOf(ClaudeError)
     expect(err.kind).toBe('cancelled')
   })
@@ -220,40 +220,40 @@ describe('polish in revisions', () => {
   }
 
   it('polishes only the letter paragraph the revision wrote, keeping hand edits elsewhere', async () => {
-    await seed(true)
+    await seed()
     const id = await app()
     // The user edited the first paragraph by hand before asking for a change to the last one.
     const current = { ...sampleLetter(), paragraphs: ['my own edited opening.', ...sampleLetter().paragraphs.slice(1)] }
     const revised = { ...current, paragraphs: [...current.paragraphs.slice(0, 2), 'leaning in, I would love to talk.'] }
     const { run, calls } = fakeRun({ [LETTER_REVISE_SYSTEM]: revised, [HUMANIZE_SYSTEM]: shout })
 
-    const out = await runLetterRevision({ run, dataDir, id, cv: sampleCv(), letter: current, instruction: 'Warmer ending' })
+    const out = await runLetterRevision({ humanize: true, run, dataDir, id, cv: sampleCv(), letter: current, instruction: 'Warmer ending' })
     expect(sentPieces(calls[1].input).map((p) => p.key)).toEqual(['letter:2'])
     expect(out.letter.paragraphs).toEqual(['my own edited opening.', sampleLetter().paragraphs[1], 'LEANING in, I would love to talk.'])
     expect(out.warnings).toEqual([])
   })
 
   it('polishes only the CV text the revision wrote, and makes no call when it wrote none', async () => {
-    await seed(true)
+    await seed()
     const id = await app()
     const revised = { ...sampleCv(), summary: 'new summary that the revision wrote.' }
     const { run, calls } = fakeRun({ [CV_REVISE_SYSTEM]: revised, [HUMANIZE_SYSTEM]: shout })
-    const out = await runCvRevision({ run, dataDir, id, cv: sampleCv(), instruction: 'Rewrite the summary' })
+    const out = await runCvRevision({ humanize: true, run, dataDir, id, cv: sampleCv(), instruction: 'Rewrite the summary' })
     expect(sentPieces(calls[1].input).map((p) => p.key)).toEqual(['summary'])
     expect(out.cv.summary).toBe('NEW summary that the revision wrote.')
     expect(out.cv.experience).toEqual(sampleCv().experience)
 
     const unchanged = fakeRun({ [CV_REVISE_SYSTEM]: sampleCv() })
-    await runCvRevision({ run: unchanged.run, dataDir, id, cv: sampleCv(), instruction: 'Reorder skills' })
+    await runCvRevision({ humanize: true, run: unchanged.run, dataDir, id, cv: sampleCv(), instruction: 'Reorder skills' })
     expect(unchanged.calls.map((c) => c.system)).toEqual([CV_REVISE_SYSTEM])
   })
 
   it('leaves revisions alone when the polish is off', async () => {
-    await seed(false)
+    await seed()
     const id = await app()
     const revised = { ...sampleLetter(), paragraphs: ['changed.', ...sampleLetter().paragraphs.slice(1)] }
     const { run, calls } = fakeRun({ [LETTER_REVISE_SYSTEM]: revised })
-    expect(await runLetterRevision({ run, dataDir, id, cv: sampleCv(), letter: sampleLetter(), instruction: 'x' })).toEqual({ letter: revised, warnings: [] })
+    expect(await runLetterRevision({ humanize: false, run, dataDir, id, cv: sampleCv(), letter: sampleLetter(), instruction: 'x' })).toEqual({ letter: revised, warnings: [] })
     expect(calls).toHaveLength(1)
   })
 })

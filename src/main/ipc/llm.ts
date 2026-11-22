@@ -1,6 +1,6 @@
 import { PROGRESS_CHANNEL, type GenerationStage } from '../../shared/api'
 import type { ApplicationLetter, CvContent, Highlight } from '../../shared/types'
-import { getDataDir, makeAppRunFn } from '../context'
+import { getDataDir, getSettings, makeAppRunFn } from '../context'
 import { runCvRevision, runGeneration, runLetterRevision } from '../generation'
 import type { RunFn } from '../llm/run-fn'
 import { measureCvHeight } from '../pdf/measure'
@@ -23,6 +23,7 @@ export function registerLlmIpc(): void {
         ownText: String(input.ownText ?? ''),
         cvOnly: input.cvOnly === true,
         measureCv: measureCvHeight,
+        humanize: (await getSettings()).humanize,
         onStage: broadcastStage,
         now: new Date()
       })
@@ -30,13 +31,17 @@ export function registerLlmIpc(): void {
   )
 
   handle('llm:reviseCv', (input: { id: string; cv: CvContent; instruction: string; highlight?: Highlight }) =>
-    withRun(async (run) => runCvRevision({ run, dataDir: await getDataDir(), ...input }))
+    withRun(async (run) =>
+      runCvRevision({ run, dataDir: await getDataDir(), ...input, humanize: (await getSettings()).humanize })
+    )
   )
 
   handle(
     'llm:reviseLetter',
     (input: { id: string; cv: CvContent; letter: ApplicationLetter; instruction: string; highlight?: Highlight }) =>
-      withRun(async (run) => runLetterRevision({ run, dataDir: await getDataDir(), ...input }))
+      withRun(async (run) =>
+        runLetterRevision({ run, dataDir: await getDataDir(), ...input, humanize: (await getSettings()).humanize })
+      )
   )
 
   handle('llm:cancel', async () => cancelClaude())
