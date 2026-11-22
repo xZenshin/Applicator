@@ -5,7 +5,7 @@ import { SettingsSchema, type LocateResult, type Settings } from '../shared/type
 import { CLAUDE_MESSAGES, ClaudeError } from './claude/errors'
 import { locateClaude, type LocateFs } from './claude/locate'
 import type { ClaudeCommand } from './claude/run'
-import { makeRunFn, type RunFn } from './llm/run-fn'
+import { makeChatFn, makeRunFn, type ChatFn, type RunFn } from './llm/run-fn'
 import { resolveDataDir } from './storage/paths'
 import { loadSettings, saveSettings } from './storage/settings'
 
@@ -62,4 +62,10 @@ export async function makeAppRunFn(signal: AbortSignal): Promise<RunFn> {
   const command = await requireClaudeCommand()
   const { model } = await getSettings()
   return makeRunFn({ command, model, cwd: claudeWorkDir(), signal })
+}
+
+export async function makeAppChatFn(signal: AbortSignal): Promise<ChatFn> {
+  const command = await requireClaudeCommand()
+  const { model } = await getSettings()
+  return makeChatFn({ command, model, cwd: claudeWorkDir(), signal })
 }

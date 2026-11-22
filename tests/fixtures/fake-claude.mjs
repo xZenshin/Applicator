@@ -42,6 +42,15 @@ process.stdin.on('end', () => {
       })
       break
     }
+    case 'chat': {
+      // stream-json output: some event lines, then the result line. The reply echoes stdin unless FAKE_CLAUDE_OUTPUT is set.
+      const i = args.indexOf('--system-prompt-file')
+      process.stdout.write(JSON.stringify({ type: 'system', subtype: 'init' }) + '\n')
+      process.stdout.write(JSON.stringify({ type: 'assistant', message: { content: [] } }) + '\n')
+      result({ result: env.FAKE_CLAUDE_OUTPUT ?? JSON.stringify({ stdin, args, systemPrompt: readFileSync(args[i + 1], 'utf8') }) })
+      process.stdout.write('\n')
+      break
+    }
     case 'error':
       result({
         is_error: true,

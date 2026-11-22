@@ -7,6 +7,8 @@ import NewApplicationPage from './pages/NewApplicationPage'
 import ReviewPage from './pages/ReviewPage'
 import HistoryPage from './pages/HistoryPage'
 import HistoryDetailPage from './pages/HistoryDetailPage'
+import InterviewPage from './pages/InterviewPage'
+import InterviewWorkspacePage from './pages/InterviewWorkspacePage'
 import ProfilePage from './pages/ProfilePage'
 import StylePage from './pages/StylePage'
 import SettingsPage from './pages/SettingsPage'
@@ -19,6 +21,11 @@ function ReviewRoute(): React.JSX.Element {
 
 function HistoryDetailRoute(): React.JSX.Element {
   return <HistoryDetailPage key={useParams().id} />
+}
+
+// Keyed by application only: opening another session of the same application keeps the side panel.
+function InterviewWorkspaceRoute(): React.JSX.Element {
+  return <InterviewWorkspacePage key={useParams().id} />
 }
 
 function App(): React.JSX.Element {
@@ -39,6 +46,9 @@ function App(): React.JSX.Element {
               <Route path="/review/:id" element={<ReviewRoute />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/history/:id" element={<HistoryDetailRoute />} />
+              <Route path="/interview" element={<InterviewPage />} />
+              <Route path="/interview/:id" element={<InterviewWorkspaceRoute />} />
+              <Route path="/interview/:id/:sessionId" element={<InterviewWorkspaceRoute />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/style" element={<StylePage />} />
               <Route path="/settings" element={<SettingsPage />} />

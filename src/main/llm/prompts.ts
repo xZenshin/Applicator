@@ -103,7 +103,7 @@ function profileForPrompt(profile: Profile): Omit<Profile, 'version' | 'nextIds'
   return rest.personal.showWebsite ? rest : { ...rest, personal: { ...rest.personal, website: '' } }
 }
 
-const writingSamples = (style: Style): string =>
+export const writingSamples = (style: Style): string =>
   style.samples
     .filter((s) => s.active && s.text.trim())
     .map((s) => `### Sample: ${s.title.trim() || 'Untitled'}\n${s.text.trim()}`)

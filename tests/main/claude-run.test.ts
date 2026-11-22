@@ -3,7 +3,15 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ClaudeError } from '../../src/main/claude/errors'
-import { buildClaudeArgs, getAuthStatus, runClaude, type ClaudeCommand } from '../../src/main/claude/run'
+import {
+  buildChatArgs,
+  buildClaudeArgs,
+  getAuthStatus,
+  runClaude,
+  runClaudeChat,
+  type ChatContent,
+  type ClaudeCommand
+} from '../../src/main/claude/run'
 
 const FAKE = resolve(__dirname, '../fixtures/fake-claude.mjs')
 const command: ClaudeCommand = { file: process.execPath, prefixArgs: [FAKE] }
@@ -147,5 +155,55 @@ describe('getAuthStatus', () => {
       authMethod: 'claude.ai',
       subscriptionType: 'pro'
     })
+  })
+})
+
+describe('runClaudeChat', () => {
+  const chat = (fakeEnv: Record<string, string>, content: ChatContent[] = [{ type: 'text', text: 'Hej – æøå' }]) =>
+    runClaudeChat({ command, systemPrompt: 'You interview.', content, model: '', cwd, env: { ...process.env, ...fakeEnv } })
+
+  it('uses stream-json in and out, without a JSON schema', () => {
+    const args = buildChatArgs('sys.txt', 'sonnet')
+    expect(args).toEqual(expect.arrayContaining(['--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose']))
+    expect(args).not.toContain('--json-schema')
+    expect(args[args.indexOf('--tools') + 1]).toBe('')
+    expect(args.slice(-2)).toEqual(['--model', 'sonnet'])
+  })
+
+  it('sends text and PDFs as one user message and returns the result text', async () => {
+    const reply = JSON.parse(
+      await chat({ FAKE_CLAUDE_MODE: 'chat' }, [
+        { type: 'pdf', name: 'case.pdf', base64: 'JVBERi0=' },
+        { type: 'text', text: 'Hej – æøå' }
+      ])
+    )
+    expect(reply.systemPrompt).toBe('You interview.')
+    const message = JSON.parse(reply.stdin)
+    expect(message).toEqual({
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [
+          { type: 'document', title: 'case.pdf', source: { type: 'base64', media_type: 'application/pdf', data: 'JVBERi0=' } },
+          { type: 'text', text: 'Hej – æøå' }
+        ]
+      }
+    })
+  })
+
+  it('trims the reply', async () => {
+    expect(await chat({ FAKE_CLAUDE_MODE: 'chat', FAKE_CLAUDE_OUTPUT: '  Welcome!  \n' })).toBe('Welcome!')
+  })
+
+  it('rejects an empty reply', async () => {
+    expect((await failure(chat({ FAKE_CLAUDE_MODE: 'chat', FAKE_CLAUDE_OUTPUT: ' ' }))).kind).toBe('invalid_output')
+  })
+
+  it('classifies errors from the result line', async () => {
+    expect((await failure(chat({ FAKE_CLAUDE_MODE: 'error', FAKE_CLAUDE_STATUS: '429' }))).kind).toBe('usage_limit')
+  })
+
+  it('reports output without a result line', async () => {
+    expect((await failure(chat({ FAKE_CLAUDE_MODE: 'crash' }))).kind).toBe('process_failed')
   })
 })

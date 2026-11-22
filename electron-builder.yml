@@ -31,3 +31,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
 npmRebuild: false
+extraResources:
+  # The Humanizer guide is built into the app (src/main/llm/humanize.ts); its MIT licence must ship with it.
+  - from: src/main/llm/humanizer/LICENSE
+    to: licenses/humanizer-LICENSE.txt

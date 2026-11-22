@@ -120,12 +120,14 @@ export type WritingSample = z.infer<typeof WritingSampleSchema>
 export const StyleSchema = z.object({
   version: z.literal(1),
   samples: z.array(WritingSampleSchema),
-  defaultInstructions: z.string()
+  defaultInstructions: z.string(),
+  /** After writing or revising, one more pass removes typical AI writing patterns (the vendored Humanizer guide). */
+  humanize: z.boolean().default(true)
 })
 export type Style = z.infer<typeof StyleSchema>
 
 export function emptyStyle(): Style {
-  return { version: 1, samples: [], defaultInstructions: '' }
+  return { version: 1, samples: [], defaultInstructions: '', humanize: true }
 }
 
 // ---------- Settings ----------
@@ -232,4 +234,77 @@ export interface ApplicationRecord {
   jobDescription: string
   draft: Draft
   profile: Profile
+}
+
+// ---------- Interview practice (stored per application) ----------
+
+export const InterviewFileSchema = z.object({
+  /** Also the stored file's name, without ".pdf". */
+  id: z.string(),
+  /** The name the file had when the user added it. */
+  name: z.string(),
+  size: z.number().int().min(0),
+  addedAt: z.string()
+})
+export type InterviewFile = z.infer<typeof InterviewFileSchema>
+
+/** Material the user got before the interview; every practice session for the application uses it. */
+export const InterviewMaterialsSchema = z.object({
+  version: z.literal(1),
+  text: z.string(),
+  files: z.array(InterviewFileSchema)
+})
+export type InterviewMaterials = z.infer<typeof InterviewMaterialsSchema>
+
+export function emptyInterviewMaterials(): InterviewMaterials {
+  return { version: 1, text: '', files: [] }
+}
+
+/** interviewer: Claude plays the interviewer and asks first. free: the user writes the first message and leads. */
+export const INTERVIEW_MODES = ['interviewer', 'free'] as const
+export type InterviewMode = (typeof INTERVIEW_MODES)[number]
+
+/** When the interviewer comments on the answers: in a report at the end, or briefly after each answer. */
+export const INTERVIEW_FEEDBACK = ['end', 'each'] as const
+export type InterviewFeedback = (typeof INTERVIEW_FEEDBACK)[number]
+
+export const InterviewMessageSchema = z.object({
+  /** assistant: Claude (the interviewer, in interviewer mode). user: the candidate. */
+  role: z.enum(['assistant', 'user']),
+  text: z.string(),
+  at: z.string()
+})
+export type InterviewMessage = z.infer<typeof InterviewMessageSchema>
+
+export const InterviewSessionSchema = z.object({
+  version: z.literal(1),
+  id: z.string(),
+  mode: z.enum(INTERVIEW_MODES),
+  feedback: z.enum(INTERVIEW_FEEDBACK),
+  /** What the user asked the interviewer to focus on; '' for none. */
+  focus: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  messages: z.array(InterviewMessageSchema),
+  report: z.object({ text: z.string(), at: z.string() }).nullable()
+})
+export type InterviewSession = z.infer<typeof InterviewSessionSchema>
+
+export interface InterviewSessionSummary {
+  id: string
+  mode: InterviewMode
+  feedback: InterviewFeedback
+  /** The focus, or the user's first message, shortened; '' if neither. */
+  title: string
+  createdAt: string
+  updatedAt: string
+  /** Answers the candidate has given. */
+  answers: number
+  hasReport: boolean
+}
+
+export interface NewInterviewSession {
+  mode: InterviewMode
+  feedback: InterviewFeedback
+  focus: string
 }

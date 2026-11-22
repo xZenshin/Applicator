@@ -6,7 +6,11 @@ import type {
   CvContent,
   Draft,
   Highlight,
+  InterviewMaterials,
+  InterviewSession,
+  InterviewSessionSummary,
   LocateResult,
+  NewInterviewSession,
   Profile,
   Settings,
   Style
@@ -14,7 +18,7 @@ import type {
 
 export type IpcResult<T> = { ok: true; value: T } | { ok: false; error: { kind: string; message: string } }
 
-export type GenerationStage = 'tailoring' | 'fitting' | 'writing'
+export type GenerationStage = 'tailoring' | 'fitting' | 'writing' | 'polishing'
 
 export interface SettingsView {
   settings: Settings
@@ -92,6 +96,26 @@ export interface Api {
     showFolder(id: string): Promise<void>
     trash(id: string): Promise<void>
   }
+  /** Interview practice for one application (appId). */
+  interview: {
+    getMaterials(appId: string): Promise<InterviewMaterials>
+    saveMaterialsText(appId: string, text: string): Promise<InterviewMaterials>
+    /** Asks for PDF files and copies them in. Returns the materials unchanged if cancelled. */
+    addPdfs(appId: string): Promise<InterviewMaterials>
+    removePdf(appId: string, fileId: string): Promise<InterviewMaterials>
+    openPdf(appId: string, fileId: string): Promise<void>
+    listSessions(appId: string): Promise<InterviewSessionSummary[]>
+    getSession(appId: string, sessionId: string): Promise<InterviewSession>
+    createSession(appId: string, s: NewInterviewSession): Promise<InterviewSession>
+    /**
+     * Saves the user's message (if text is not empty), then asks Claude for the next message and saves that.
+     * With empty text, Claude answers the chat as it stands: the interviewer's opening, or a retry after a failed reply.
+     */
+    send(appId: string, sessionId: string, text: string): Promise<InterviewSession>
+    /** Writes (or rewrites) the feedback report on the session so far. */
+    report(appId: string, sessionId: string): Promise<InterviewSession>
+    deleteSession(appId: string, sessionId: string): Promise<void>
+  }
 }
 
 /** Every invokable method; the IPC channel is "<group>:<method>". */
@@ -100,7 +124,20 @@ export const CHANNELS = {
   profile: ['get', 'save', 'exportPdf', 'openPdf', 'showPdf'],
   style: ['get', 'save'],
   llm: ['generate', 'reviseCv', 'reviseLetter', 'cancel'],
-  applications: ['list', 'get', 'saveDraft', 'exportPdfs', 'openFile', 'showFolder', 'trash']
+  applications: ['list', 'get', 'saveDraft', 'exportPdfs', 'openFile', 'showFolder', 'trash'],
+  interview: [
+    'getMaterials',
+    'saveMaterialsText',
+    'addPdfs',
+    'removePdf',
+    'openPdf',
+    'listSessions',
+    'getSession',
+    'createSession',
+    'send',
+    'report',
+    'deleteSession'
+  ]
 } as const
 
 export const PROGRESS_CHANNEL = 'llm:progress'

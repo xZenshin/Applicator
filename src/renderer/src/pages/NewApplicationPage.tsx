@@ -15,7 +15,8 @@ const OUTPUT_KEY = 'new.output'
 const STAGE_TEXT: Record<GenerationStage, string> = {
   tailoring: 'Analyzing the job and tailoring your CV…',
   fitting: 'Fitting your CV on one page…',
-  writing: 'Writing your application…'
+  writing: 'Writing your application…',
+  polishing: 'Polishing the wording…'
 }
 
 /** State mirrored into sessionStorage so navigating away doesn't lose a pasted posting. */

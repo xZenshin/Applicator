@@ -385,3 +385,106 @@ h2 {
 .mantine-Tooltip-tooltip {
   font-size: 12px;
 }
+
+/* ---------- Interview practice ---------- */
+
+.k-interview {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+  max-width: 1200px;
+}
+.k-interview-side {
+  position: sticky;
+  top: 16px;
+}
+.k-interview-main {
+  min-width: 0;
+  max-width: 820px;
+}
+
+.k-session {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  transition: background-color var(--k-dur-quick) var(--k-ease);
+}
+.k-session:hover {
+  background: var(--k-soft);
+}
+.k-session[data-active] {
+  background: var(--k-control);
+  box-shadow: var(--k-control-edge), var(--k-control-shadow);
+}
+
+.k-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.k-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 85%;
+}
+.k-msg[data-role='assistant'] {
+  align-self: flex-start;
+}
+.k-msg[data-role='user'] {
+  align-self: flex-end;
+}
+.k-msg[data-role='user'] .k-msg-body {
+  padding: 10px 14px;
+  border-radius: 12px 12px 4px 12px;
+  background: var(--k-ink-soft);
+}
+.k-msg-body {
+  font-size: 14px;
+  line-height: 21px;
+}
+.k-msg-feedback {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 2px solid var(--k-line-strong);
+  background: var(--k-soft);
+  color: var(--k-muted);
+  margin-bottom: 4px;
+}
+
+/* The composer stays at the bottom of the window while the conversation scrolls. */
+.k-composer {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 16px;
+  background: var(--k-panel);
+  box-shadow: 0 -12px 12px -12px var(--k-panel);
+}
+
+.k-rich > :first-child {
+  margin-top: 0;
+}
+.k-rich > :last-child {
+  margin-bottom: 0;
+}
+.k-rich p,
+.k-rich ul,
+.k-rich ol {
+  margin: 0 0 8px;
+}
+.k-rich ul,
+.k-rich ol {
+  padding-left: 20px;
+}
+.k-rich li + li {
+  margin-top: 3px;
+}
+.k-rich h4 {
+  margin: 16px 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}

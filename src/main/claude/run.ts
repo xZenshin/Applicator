@@ -177,6 +177,97 @@ export async function runClaude(req: ClaudeRunRequest): Promise<unknown> {
   }
 }
 
+/** A piece of a chat message: text, or a PDF Claude reads itself (scanned pages included). */
+export type ChatContent =
+  | { type: 'text'; text: string }
+  | { type: 'pdf'; name: string; base64: string }
+
+export interface ClaudeChatRequest {
+  command: ClaudeCommand
+  systemPrompt: string
+  /** Sent as one user message on stdin. */
+  content: ChatContent[]
+  model: string
+  cwd: string
+  timeoutMs?: number
+  signal?: AbortSignal
+  env?: NodeJS.ProcessEnv
+}
+
+/** stream-json input is the only way to hand the CLI a PDF; it requires stream-json output. */
+export function buildChatArgs(systemPromptFile: string, model: string): string[] {
+  const args = [
+    '-p',
+    '--input-format',
+    'stream-json',
+    '--output-format',
+    'stream-json',
+    '--verbose',
+    '--system-prompt-file',
+    systemPromptFile,
+    '--safe-mode',
+    '--tools',
+    '',
+    '--no-session-persistence'
+  ]
+  return model ? [...args, '--model', model] : args
+}
+
+/** The stdin line: one user message in the Messages API format. */
+export function chatInputLine(content: ChatContent[]): string {
+  const blocks = content.map((c) =>
+    c.type === 'text'
+      ? { type: 'text', text: c.text }
+      : { type: 'document', title: c.name, source: { type: 'base64', media_type: 'application/pdf', data: c.base64 } }
+  )
+  return JSON.stringify({ type: 'user', message: { role: 'user', content: blocks } }) + '\n'
+}
+
+/** stream-json prints one JSON object per line; the answer is in the last one, of type "result". */
+function interpretChat(res: ProcessResult): string {
+  let result: Record<string, unknown> | null = null
+  for (const line of res.stdout.split(/\r?\n/).reverse()) {
+    if (!line.trim().startsWith('{')) continue
+    try {
+      const value = JSON.parse(line)
+      if (value?.type === 'result') {
+        result = value
+        break
+      }
+    } catch {
+      // not a complete JSON line
+    }
+  }
+  if (!result) {
+    const detail = (res.stderr.trim() || res.stdout.trim()).slice(-500)
+    throw new ClaudeError('process_failed', `Claude Code exited with code ${res.code}: ${detail}`)
+  }
+  if (result.is_error) {
+    throw classifyResultError(result as { result?: string; api_error_status?: number | null })
+  }
+  if (typeof result.result === 'string' && result.result.trim()) return result.result.trim()
+  throw new ClaudeError('invalid_output', CLAUDE_MESSAGES.invalid_output)
+}
+
+/** Runs one print-mode request and returns Claude's reply as plain text. */
+export async function runClaudeChat(req: ClaudeChatRequest): Promise<string> {
+  await mkdir(req.cwd, { recursive: true })
+  const systemPromptFile = join(tmpdir(), `applicator-sys-${randomBytes(6).toString('hex')}.txt`)
+  await writeFile(systemPromptFile, req.systemPrompt, 'utf8')
+  try {
+    const res = await exec(req.command, buildChatArgs(systemPromptFile, req.model), {
+      cwd: req.cwd,
+      env: childEnv(req.env ?? process.env),
+      input: chatInputLine(req.content),
+      timeoutMs: req.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      signal: req.signal
+    })
+    return interpretChat(res)
+  } finally {
+    await rm(systemPromptFile, { force: true }).catch(() => {})
+  }
+}
+
 export async function getAuthStatus(
   command: ClaudeCommand,
   env: NodeJS.ProcessEnv = process.env

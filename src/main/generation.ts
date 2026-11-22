@@ -2,6 +2,7 @@ import type { GenerationStage } from '../shared/api'
 import { AppError } from '../shared/errors'
 import { isProfileUsable } from '../shared/profile-checks'
 import type { ApplicationLetter, ApplicationMeta, CvContent, Highlight } from '../shared/types'
+import { humanizeCvRevision, humanizeLetterRevision } from './llm/humanize'
 import { generateApplication, reviseCv, reviseLetter, type MeasureCv } from './llm/pipeline'
 import type { RunFn } from './llm/run-fn'
 import { createApplication, loadApplication } from './storage/applications'
@@ -53,7 +54,10 @@ export async function runGeneration(a: {
   })
 }
 
-/** Revisions use the profile snapshot taken at generation time; the renderer applies and saves the result. */
+/**
+ * Revisions use the profile snapshot taken at generation time; the renderer applies and saves the result.
+ * With the polish on, only the text the revision wrote is polished: the user's own edits elsewhere are left alone.
+ */
 export async function runCvRevision(a: {
   run: RunFn
   dataDir: string
@@ -63,8 +67,9 @@ export async function runCvRevision(a: {
   highlight?: Highlight
 }): Promise<{ cv: CvContent; warnings: string[] }> {
   const record = await loadApplication(a.dataDir, a.id)
-  const cvOnly = record.draft.letter === null ? { style: await loadStyle(a.dataDir), ownText: record.draft.ownText } : undefined
-  return reviseCv({
+  const style = await loadStyle(a.dataDir)
+  const cvOnly = record.draft.letter === null ? { style, ownText: record.draft.ownText } : undefined
+  const revised = await reviseCv({
     run: a.run,
     profile: record.profile,
     jobDescription: record.jobDescription,
@@ -75,6 +80,10 @@ export async function runCvRevision(a: {
     cvOnly,
     highlight: a.highlight
   })
+  if (!style.humanize) return revised
+  const language = record.draft.job.language
+  const polished = await humanizeCvRevision({ run: a.run, before: a.cv, after: revised.cv, language, style })
+  return { cv: polished.cv, warnings: [...revised.warnings, ...polished.warnings] }
 }
 
 export async function runLetterRevision(a: {
@@ -87,10 +96,11 @@ export async function runLetterRevision(a: {
   highlight?: Highlight
 }): Promise<ApplicationLetter> {
   const record = await loadApplication(a.dataDir, a.id)
-  return reviseLetter({
+  const style = await loadStyle(a.dataDir)
+  const revised = await reviseLetter({
     run: a.run,
     profile: record.profile,
-    style: await loadStyle(a.dataDir),
+    style,
     jobDescription: record.jobDescription,
     job: record.draft.job,
     cv: a.cv,
@@ -100,4 +110,6 @@ export async function runLetterRevision(a: {
     ownText: record.draft.ownText,
     highlight: a.highlight
   })
+  if (!style.humanize) return revised
+  return humanizeLetterRevision({ run: a.run, before: a.letter, after: revised, language: record.draft.job.language, style })
 }

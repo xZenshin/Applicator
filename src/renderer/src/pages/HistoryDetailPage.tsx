@@ -59,6 +59,9 @@ export default function HistoryDetailPage(): React.JSX.Element {
         </Stack>
         <Group gap="xs">
           <Button onClick={() => navigate(`/review/${encodeURIComponent(id)}`)}>Open in editor</Button>
+          <Button variant="default" onClick={() => navigate(`/interview/${encodeURIComponent(id)}`)}>
+            Practice interview
+          </Button>
           {meta.cvPdf && (
             <Button variant="default" onClick={() => openFile(meta.cvPdf!)}>
               Open CV PDF

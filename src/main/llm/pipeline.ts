@@ -24,6 +24,7 @@ import {
   fitOnePageInstruction,
   type CvOnlyContext
 } from './prompts'
+import { humanizeApplication } from './humanize'
 import type { RunFn } from './run-fn'
 import { normalizeLanguage, restoreAlwaysIncluded, sanitizeCv } from './sanitize'
 import { TailorOutputSchema } from './schemas'
@@ -92,21 +93,36 @@ export async function generateApplication(a: {
   if (language.warning) warnings.push(language.warning)
   const job = { ...tailored.job, language: language.language }
 
-  let cv = restored.cv
-  if (a.measureCv) {
-    const fitted = await fitOnePage({ ...a, job, cv, cvOnly, measureCv: a.measureCv })
-    cv = fitted.cv
-    // Both shortening rounds can leave out the same job; say so once.
-    for (const w of fitted.warnings) if (!warnings.includes(w)) warnings.push(w)
+  const addWarnings = (ws: string[]): void => {
+    // Shortening rounds can leave out the same job more than once; say so once.
+    for (const w of ws) if (!warnings.includes(w)) warnings.push(w)
   }
-  if (a.cvOnly) return { job, cv, letter: null, warnings }
+  const fit = async (cv: CvContent): Promise<CvContent> => {
+    if (!a.measureCv) return cv
+    const fitted = await fitOnePage({ ...a, job, cv, cvOnly, measureCv: a.measureCv })
+    addWarnings(fitted.warnings)
+    return fitted.cv
+  }
 
-  a.onStage('writing')
-  const letter = await a.run({
-    system: LETTER_SYSTEM,
-    input: buildLetterInput({ ...a, job, cv }),
-    schema: ApplicationLetterSchema
-  })
+  let cv = await fit(restored.cv)
+  let letter: ApplicationLetter | null = null
+  if (!a.cvOnly) {
+    a.onStage('writing')
+    letter = await a.run({
+      system: LETTER_SYSTEM,
+      input: buildLetterInput({ ...a, job, cv }),
+      schema: ApplicationLetterSchema
+    })
+  }
+
+  if (a.style.humanize) {
+    a.onStage('polishing')
+    const polished = await humanizeApplication({ run: a.run, cv, letter, language: job.language, style: a.style })
+    letter = polished.letter
+    addWarnings(polished.warnings)
+    // The polish never lengthens text on purpose, but the page is checked again; this costs no call when it fits.
+    cv = await fit(polished.cv)
+  }
   return { job, cv, letter, warnings }
 }
 

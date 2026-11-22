@@ -1,4 +1,5 @@
 import { registerApplicationsIpc } from './applications'
+import { registerInterviewIpc } from './interview'
 import { registerLlmIpc } from './llm'
 import { registerProfileIpc } from './profile'
 import { registerSettingsIpc } from './settings'
@@ -10,4 +11,5 @@ export function registerIpc(): void {
   registerStyleIpc()
   registerLlmIpc()
   registerApplicationsIpc()
+  registerInterviewIpc()
 }

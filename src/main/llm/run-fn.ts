@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import { CLAUDE_MESSAGES, ClaudeError } from '../claude/errors'
-import { runClaude, type ClaudeRunRequest } from '../claude/run'
+import { runClaude, runClaudeChat, type ChatContent, type ClaudeChatRequest, type ClaudeRunRequest } from '../claude/run'
 import { toCliSchema } from './schemas'
 
 /** One structured LLM call: system prompt + stdin input in, schema-validated value out. */
@@ -18,4 +18,11 @@ export function makeRunFn(base: Omit<ClaudeRunRequest, 'systemPrompt' | 'input' 
     if (!parsed.success) throw new ClaudeError('invalid_output', CLAUDE_MESSAGES.invalid_output)
     return parsed.data
   }
+}
+
+/** One plain-text chat call: system prompt + message content in, Claude's reply out. */
+export type ChatFn = (req: { system: string; content: ChatContent[] }) => Promise<string>
+
+export function makeChatFn(base: Omit<ClaudeChatRequest, 'systemPrompt' | 'content'>): ChatFn {
+  return (req) => runClaudeChat({ ...base, systemPrompt: req.system, content: req.content })
 }

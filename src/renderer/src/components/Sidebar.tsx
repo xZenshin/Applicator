@@ -1,11 +1,12 @@
 import { ActionIcon, Tooltip, useComputedColorScheme, useMantineColorScheme } from '@mantine/core'
-import { FilePlus2, History, Moon, PenLine, SlidersHorizontal, Sun, UserRound, type LucideIcon } from 'lucide-react'
+import { FilePlus2, History, MessagesSquare, Moon, PenLine, SlidersHorizontal, Sun, UserRound, type LucideIcon } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useClaudeStatus } from '../hooks/useClaudeStatus'
 
 const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/new', label: 'New application', icon: FilePlus2 },
   { to: '/history', label: 'History', icon: History },
+  { to: '/interview', label: 'Interview practice', icon: MessagesSquare },
   { to: '/profile', label: 'My CV', icon: UserRound },
   { to: '/style', label: 'Writing style', icon: PenLine },
   { to: '/settings', label: 'Settings', icon: SlidersHorizontal }
